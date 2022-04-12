@@ -1,0 +1,8 @@
+TODO:
+
+-investigate the equivalent in Windows environment. For example, find the commands in Windows Power Shell that does:
+ -Base64 encode/decode
+ -rev - to reverse a string
+ -tr - to replace contents of ascii texts with 2 character sequences
+-consider to combine and encrypt/decode multiple tags in one go
+-
