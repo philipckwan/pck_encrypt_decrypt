@@ -5,4 +5,4 @@ TODO:
  -rev - to reverse a string
  -tr - to replace contents of ascii texts with 2 character sequences
 -consider to combine and encrypt/decode multiple tags in one go
--
+-consider to put in proper encryption such as gpg or openssl
