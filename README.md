@@ -75,9 +75,7 @@ The console displays this one line:<br/>
 ```RESULTS: [<enc-01>qUicKBrownFox134</enc-01>]```
 
 Futhermore, for the last example, since there are multiple and different tags to be encrypted, I can put all keys in a comma-separated list:
-```
-$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01,enc-02,enc-04
-```
+```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01,enc-02,enc-04```
 
 I used the same encryption password, which is `qweRTY22`, to encrypt all 3 lines.
 
