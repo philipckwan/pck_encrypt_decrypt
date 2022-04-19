@@ -2,7 +2,7 @@
 
 #
 # pck_encrypt_decrypt.sh
-# v1.4
+# v1.5
 # Author: philipckwan@gmail.com
 #
 # This is an encryption and decryption tool based on some common Linux commands, run in bash script.
@@ -15,7 +15,15 @@
 # -the encryption and decryption technology is based on base64 encoding and followed by a text shuffling,
 #  based on a passphrase setup by the user upon encryption
 #
-
+# -update v1.5 (20220419)
+# 1) for the 3rd argument ${arg_tag_key}, now supporting using comma (,) to provide a list of tag keys
+# In other words, the tag should not have comma as it will be used to delimit tag keys
+# e.g.
+# $ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01,enc-02
+# the above command will encrypt 2 tags in the file, <enc-01> and <enc-02>
+# 2) generate random salts for encryption in tag mode, this will ensure encrypting the same text will result in different outputs
+#  while still can be decrypted properly
+#
 BASE64=base64
 BASENAME=basename
 DIRNAME=dirname
@@ -45,6 +53,13 @@ result_filename_suffix=""
 is_process_whole_file=false
 is_generate_results_in_file=false
 is_encrypt=false
+tag_keys=()
+
+SALT_SEPARATOR="-"
+SALT_LENGTH=3
+is_salt_used=false
+salt_num_repeat=0
+salt_shuffle_idx=0
 
 base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
 
@@ -134,9 +149,14 @@ function arguments_check {
 		echo "arguments_check: is_process_whole_file=true"
 	else 
 		is_process_whole_file=false
-		tag_key_head="<${arg_tag_key}>"
-		tag_key_tail="</${arg_tag_key}>"
-		echo "arguments_check: tag key pair: [$tag_key_head],[$tag_key_tail]"
+		tag_keys=(${arg_tag_key//,/ })
+		#tag_key_head="<${arg_tag_key}>"
+		#tag_key_tail="</${arg_tag_key}>"
+		echo "arguments_check: tag keys:"
+		for item in "${tag_keys[@]}"
+		do
+			echo "[${item}];"
+		done
 	fi
 	
 }
@@ -159,8 +179,32 @@ function ask_password {
 	#echo "password_confirm_from_stdin: [$password_confirm_from_stdin]"
 }
 
+function extract_salt_from_encrypted_text {
+	text=$1
+	#echo "text:[$text]"
+
+	is_salt_used=false
+	if [ "${text:2:1}" == "$SALT_SEPARATOR" ] ; then
+		is_salt_used=true
+		# salt separator is found, parse the earlier characters for $salt_num_repeat and $salt_shuffle_idx
+		salt_num_repeat=${text:0:1}
+		salt_shuffle_idx=${text:1:1}
+		#echo "extract_salt_from_encrypted_text: salt is found, salt_num_repeat:[${salt_num_repeat}]; salt_shuffle_idx:[${salt_shuffle_idx}];"
+	else
+		:
+		#echo "extract_salt_from_encrypted_text: salt is not found"
+	fi
+}
+
 function password_process {
+	# if encrypt and tag based
+	#  generate $salt_num_repeat and $salt_shuffle_idx,then apply to $password_processed and $password_reversed
+	# if decrypt and tag based
+	#  take from $salt_num_repeat and $salt_shuffle_idx, then apply to $password_processed and $password_reversed
+	# if not tag based (i.e. whole file encrypt/decrypt)
+	#  salt is not supported for this type
 	combined_password_base64_charset="${password_from_stdin}${base64_charset}"
+	password_processed=""
 	for (( i=0; i<${#combined_password_base64_charset}; i++ )); do
 		thisChar="${combined_password_base64_charset:$i:1}"
 		if [[ $password_processed == *${thisChar}* ]]
@@ -170,9 +214,38 @@ function password_process {
 			password_processed="${password_processed}${thisChar}"
 		fi
 	done
+	#echo "password_process:1-password_processed: [${password_processed}]"
+
+	if [ "${is_process_whole_file}" = false ] ; then
+		if [ "${is_encrypt}" = true ] ; then
+			# the first salt is the number of times to repeat, $salt_num_repeat
+			salt_num_repeat=$(($RANDOM%9+1))
+
+			# the second salt is the index to shuffle from the end, $salt_shuffle_idx
+			salt_shuffle_idx=$(($RANDOM%9+1))
+		else
+			if [ "${is_salt_used}" = true ] ; then
+				# $salt_num_repeat and $salt_shuffle_idx should already set at this point
+				:
+			fi
+		fi
+		
+		if [ ${salt_num_repeat} -gt 0 ] ; then
+			salt_shuffle_idx_neg=$(($salt_shuffle_idx*-1))
+			for (( i=0; i<${salt_num_repeat}; i++ )); do			
+				pwd_salt=`echo ${password_processed:$salt_shuffle_idx_neg} | $REV`
+				head_length=$((${#password_processed}+${salt_shuffle_idx_neg}))
+				pwd_head=${password_processed:0:${head_length}}
+				password_processed="${pwd_salt}${pwd_head}"
+			done
+		fi
+		#echo "password_process:2-salt_num_repeat:[$salt_num_repeat]; salt_shuffle_idx:[$salt_shuffle_idx]"
+	fi
+
 	password_reversed=`echo ${password_processed} | $REV`
-	#echo "password_processed: [${password_processed}]"
-	#echo "password_reversed:  [${password_reversed}]"
+	
+	#echo "password_process:2-password_processed: [${password_processed}]"
+	#echo "password_process:2-password_reversed:  [${password_reversed}]"
 }
 
 function do_work {
@@ -204,8 +277,8 @@ function do_work_on_a_file {
 		echo -n > $g
 	fi
 
-	if [ "${is_process_whole_file}" = true ]
-	then
+	if [ "${is_process_whole_file}" = true ] ; then
+		password_process
 		if [[ "${is_generate_results_in_file}" = false && "${is_encrypt}" = true ]] ; then
 			cat $f | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"
 		elif [[ "${is_generate_results_in_file}" = true && "${is_encrypt}" = true ]] ; then
@@ -218,32 +291,58 @@ function do_work_on_a_file {
 	else
 		while IFS= read -r line || [ -n "$line" ];
 		do
-			if [[ $line == ${tag_key_head}* && $line == *${tag_key_tail} ]]
-			then
-				#echo "do_work_on_a_file: line found: [$line]";
-				matched_found=true
-				tmp=${line#*${tag_key_head}}
-				matched_text=${tmp%${tag_key_tail}*} 
-				if [[ "${is_encrypt}" = true ]]
+			tag_found=false
+			for tag_key in "${tag_keys[@]}"
+			do
+				tag_key_head="<${tag_key}>"
+            	tag_key_tail="</${tag_key}>"
+				if [[ $line == ${tag_key_head}* && $line == *${tag_key_tail} ]]
 				then
-					results=`echo "${matched_text}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
+					#echo "do_work_on_a_file: line found: [$line]";
+					tag_found=true
+					matched_found=true
+					tmp=${line#*${tag_key_head}}
+					matched_text=${tmp%${tag_key_tail}*} 
+
+					if [ "${is_encrypt}" = false ] ; then
+						extract_salt_from_encrypted_text "${matched_text}"
+						if [ "${is_salt_used}" = true ] ; then
+							matched_text=${matched_text:${SALT_LENGTH}}
+						fi
+					fi
+
+					password_process
+
+					if [ "${is_encrypt}" = true ] ; then
+						results=`echo "${matched_text}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
+						results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
+						#echo "results:[${results}]"
+					else
+						#echo "do_work_on_a_file: matched_text:[${matched_text}]"
+						results=`echo "${matched_text}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
+					fi
+					results_with_tags="${tag_key_head}${results}${tag_key_tail}"
+					
+					if [ "${is_generate_results_in_file}" = true ] ; then
+						echo "$results_with_tags" >> $g
+					else
+						echo "RESULTS: [$results_with_tags]"
+					fi
+					break
 				else
-					results=`echo "${matched_text}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
+					:
+					#if [[ "${is_generate_results_in_file}" = true ]] ; then
+					#	echo "$line" >> $g
+					#fi
 				fi
-				results_with_tags="${tag_key_head}${results}${tag_key_tail}"
-				
-				if [[ "${is_generate_results_in_file}" = true ]] ; then
-					echo "$results_with_tags" >> $g
-				else
-					echo "RESULTS: [$results_with_tags]"
-				fi
-			else
-				if [[ "${is_generate_results_in_file}" = true ]] ; then
+			done
+			if [ "${tag_found}" = false ] ; then
+				if [ "${is_generate_results_in_file}" = true ] ; then
 					echo "$line" >> $g
 				fi
 			fi
 		done < $f
-		if [ "$matched_found" = false ] ; then
+		if [ "${matched_found}" = false ] ; then
 			echo "WARN: No matched text is found."
 		fi	
 	fi
@@ -254,7 +353,7 @@ function do_work_on_a_file {
 commands_check
 arguments_check 
 ask_password
-password_process
+#password_process
 do_work
 exit 0
 

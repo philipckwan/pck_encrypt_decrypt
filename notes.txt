@@ -4,5 +4,6 @@ TODO:
  -Base64 encode/decode
  -rev - to reverse a string
  -tr - to replace contents of ascii texts with 2 character sequences
--consider to combine and encrypt/decode multiple tags in one go
+DONE-consider to combine and encrypt/decode multiple tags in one go
 -consider to put in proper encryption such as gpg or openssl
+DONE-add salt to the tag mode encryption so that the same text will be enrypted to different results

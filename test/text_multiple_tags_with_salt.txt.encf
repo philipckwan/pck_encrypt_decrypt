@@ -1,0 +1,22 @@
+This text file will be partially encrypted.
+
+My logins to web accesses:
+
+These should be decrypted to "helloworld"
+<enc-01>45-MpeyNp4+N+iyYuF=</enc-01>
+<enc-01>31-gSE8fSryfyO8B0/=</enc-01>
+<enc-01>89-q7Qil7kKlK4iuYf=</enc-01>
+<enc-01>55-ZBiI0BTd0dtIaFP=</enc-01>
+<enc-01>28-Bg8jCgU1C1qj5ry=</enc-01>
+
+This should also be decrypted to "helloworld"
+<enc-02>16-h0KTi0yEiEWTH7w=</enc-02>
+
+This should be decrypted to "ok"
+<enc-03>62-AHh9</enc-03>
+
+This should also be decrypted to "ok"
+<enc-04>91-sBb3</enc-04>
+
+This should also be decrypted to "ok"
+<enc-03>79-wh1H</enc-03>

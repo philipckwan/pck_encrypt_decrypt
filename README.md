@@ -16,7 +16,7 @@ This tool:
 Command Arguments
 -
 ```
-pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]
+pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag keys>]
 ```
 * filepath: relative path and filename, pointing to the file
 * encrypt option: enc | dec | encf | decf <br/>
@@ -24,9 +24,10 @@ enc - encrypt in memory, showing the results in console <br/>
 dec - decrypt in memory, showing the results in console <br/>
 encf - encrypt and output to file <br/>
 decf - decrypt and output to file <br/>
-* tag key: < and > will be added to enclose tag key; i.e. pck-01 becomes \<pck-01> and \</pck-01> <br/>
+* tag keys: < and > will be added to enclose tag key; i.e. pck-01 becomes \<pck-01> and \</pck-01> <br/>
 It is expected the tag is enlosed like xml tags, i.e. \<pck-01> and \</pck-01> enclosed the inline text to be encrypted <br/>
 If \<tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted <br/>
+tag keys can be a comma separated list, i.e. pck-01,pck-02,pck-04 will results in handling three tags <pck-01>, <pck-02> and <pck-04>
 * password will then be asked during the process of the script execution. <br/>
 
 Examples
@@ -65,7 +66,7 @@ The resulting file will be all identical to the orginal file except the line whe
 It is changed from:<br/>
 ```<enc-01>qUicKBrownFox134</enc-01>```<br/>
 to:<br/>
-```<enc-01>eyy4gt0Pe7krw9uXcONUES5=</enc-01>```
+```<enc-01>27-A44iKZlfAuOWzs0nHghb+cx=</enc-01>```
 
 I then decrypt the same line and have the results display on console:<br/>
 ```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf dec enc-01```
@@ -73,23 +74,30 @@ I then decrypt the same line and have the results display on console:<br/>
 The console displays this one line:<br/>
 ```RESULTS: [<enc-01>qUicKBrownFox134</enc-01>]```
 
-Futhermore, for the last example, since there are multiple and different tags to be encrypted, I need to piggyback running the command, i.e.:
+Futhermore, for the last example, since there are multiple and different tags to be encrypted, I can put all keys in a comma-separated list:
 ```
-$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01
-$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf encf enc-02
-$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf.encf encf enc-04
+$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01,enc-02,enc-04
 ```
-
-which I can then simplify the filename by replacing the first one with the last one, I can then remove the intermediate ones too:<br/>
-```$ mv test/text_partial_encryption.txt.encf.encf.encf test/text_partial_encryption.txt.encf```
 
 I used the same encryption password, which is `qweRTY22`, to encrypt all 3 lines.
 
-To decrypt and only show the results of one of the tag, i.e. <br/>
-```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf dec enc-02```
+To decrypt and only show the results of one or more of the tag, i.e. <br/>
+```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf dec enc-02,enc-04```
 
 The console displays this one line:<br/>
 ```RESULTS: [<enc-02>passworD3322</enc-02>]```
+
+Example 4 - encrypting the same text results in different output because of salt
+
+In text_multiple_tags_with_salt, multiple lines are identical (i.e. they are "helloworld" or "ok")
+But the resulting encrypted tags are different, because salt is being applied to the encryption process.
+When salt is applied, the encrypted tag contect will contains a prefix of "xx-" where xx are 2 numbers
+These 2 numbers are salt used to generated different output when encrypting.
+But when decrypting, given the salt is provided and the same password is used, it will be able to recover back to the original text.
+See <https://en.wikipedia.org/wiki/Salt_(cryptography)>
+
+Try decrypt this file, with the password `qweRTY22`, to see.
+```$ ./pck_encrypt_decrypt.sh test/text_multiple_tags_with_salt.txt.encf decf enc-01,enc-02,enc-03,enc-04```
 
 Cryptography analysis and rational of this tool
 -

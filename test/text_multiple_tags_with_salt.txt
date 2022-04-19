@@ -1,0 +1,22 @@
+This text file will be partially encrypted.
+
+My logins to web accesses:
+
+These should be decrypted to "helloworld"
+<enc-01>helloworld</enc-01>
+<enc-01>helloworld</enc-01>
+<enc-01>helloworld</enc-01>
+<enc-01>helloworld</enc-01>
+<enc-01>helloworld</enc-01>
+
+This should also be decrypted to "helloworld"
+<enc-02>helloworld</enc-02>
+
+This should be decrypted to "ok"
+<enc-03>ok</enc-03>
+
+This should also be decrypted to "ok"
+<enc-04>ok</enc-04>
+
+This should also be decrypted to "ok"
+<enc-03>ok</enc-03>
