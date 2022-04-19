@@ -27,7 +27,7 @@ decf - decrypt and output to file <br/>
 * tag keys: < and > will be added to enclose tag key; i.e. pck-01 becomes \<pck-01> and \</pck-01> <br/>
 It is expected the tag is enlosed like xml tags, i.e. \<pck-01> and \</pck-01> enclosed the inline text to be encrypted <br/>
 If \<tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted <br/>
-tag keys can be a comma separated list, i.e. pck-01,pck-02,pck-04 will results in handling three tags <pck-01>, <pck-02> and <pck-04>
+tag keys can be a comma separated list, i.e. pck-01,pck-02,pck-04 will results in handling three tags \<pck-01>, \<pck-02> and \<pck-04>
 * password will then be asked during the process of the script execution. <br/>
 
 Examples
