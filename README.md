@@ -96,7 +96,7 @@ These 2 numbers are salt used to generated different output when encrypting.<br/
 But when decrypting, given the salt is provided and the same password is used, it will be able to recover back to the original text.<br/>
 See <https://en.wikipedia.org/wiki/Salt_(cryptography)><br/>
 
-Try decrypt this file, with the password `qweRTY22`, to see.
+Try decrypt this file, with the password `qweRTY22`, to see.<br/>
 ```$ ./pck_encrypt_decrypt.sh test/text_multiple_tags_with_salt.txt.encf decf enc-01,enc-02,enc-03,enc-04```
 
 Cryptography analysis and rational of this tool
