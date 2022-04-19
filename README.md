@@ -89,12 +89,12 @@ The console displays this one line:<br/>
 
 Example 4 - encrypting the same text results in different output because of salt
 
-In text_multiple_tags_with_salt, multiple lines are identical (i.e. they are "helloworld" or "ok")
-But the resulting encrypted tags are different, because salt is being applied to the encryption process.
-When salt is applied, the encrypted tag contect will contains a prefix of "xx-" where xx are 2 numbers
-These 2 numbers are salt used to generated different output when encrypting.
-But when decrypting, given the salt is provided and the same password is used, it will be able to recover back to the original text.
-See <https://en.wikipedia.org/wiki/Salt_(cryptography)>
+In text_multiple_tags_with_salt.txt, multiple lines are identical (i.e. they are "helloworld" or "ok").<br/>
+But the resulting encrypted tags are different, because salt is being applied to the encryption process.<br/>
+When salt is applied, the encrypted tag contect will contains a prefix of "xx-" where xx are 2 numbers.<br/>
+These 2 numbers are salt used to generated different output when encrypting.<br/>
+But when decrypting, given the salt is provided and the same password is used, it will be able to recover back to the original text.<br/>
+See <https://en.wikipedia.org/wiki/Salt_(cryptography)><br/>
 
 Try decrypt this file, with the password `qweRTY22`, to see.
 ```$ ./pck_encrypt_decrypt.sh test/text_multiple_tags_with_salt.txt.encf decf enc-01,enc-02,enc-03,enc-04```
