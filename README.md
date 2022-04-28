@@ -137,6 +137,6 @@ In other words, the longer it is, the less repeating character it contains, the 
 Change logs
 -
 
-Refer to the script pck_encrypt_decrypt.sh for more details.
+Refer to the script pck_encrypt_decrypt.sh for more details. <br/>
 Update v1.6 (28-4-2022):
 * fix an issue with handling windows/dos type of text file
