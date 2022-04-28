@@ -2,7 +2,7 @@
 
 #
 # pck_encrypt_decrypt.sh
-# v1.5
+# v1.6
 # Author: philipckwan@gmail.com
 #
 # This is an encryption and decryption tool based on some common Linux commands, run in bash script.
@@ -23,6 +23,10 @@
 # the above command will encrypt 2 tags in the file, <enc-01> and <enc-02>
 # 2) generate random salts for encryption in tag mode, this will ensure encrypting the same text will result in different outputs
 #  while still can be decrypted properly
+#
+# -update v1.6 (20220428)
+# fix an issue with handling windows/dos type of text file, tag key matching does not work because of the
+#  newline/linefeed difference between dos and unix
 #
 BASE64=base64
 BASENAME=basename
@@ -296,7 +300,7 @@ function do_work_on_a_file {
 			do
 				tag_key_head="<${tag_key}>"
             	tag_key_tail="</${tag_key}>"
-				if [[ $line == ${tag_key_head}* && $line == *${tag_key_tail} ]]
+				if [[ $line == ${tag_key_head}* && $line == *${tag_key_tail}* ]]
 				then
 					#echo "do_work_on_a_file: line found: [$line]";
 					tag_found=true

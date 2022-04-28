@@ -133,3 +133,10 @@ and it will be used along with the linux command `tr` to replace the Base64 enco
 ```echo $content | $TR "${base64_charset}" "${base64_reverse}```<br/>
 The entropy of such shuffling, should be depended on the length of the user input password.<br/>
 In other words, the longer it is, the less repeating character it contains, the more unique character it contains, will result in a more deviated sequence than the original base64 character set, which should therefore results in a more secure shuffled contents than the original Base64 encoded contents.
+
+Change logs
+-
+
+Refer to the script pck_encrypt_decrypt.sh for more details.
+Update v1.6 (28-4-2022):
+* fix an issue with handling windows/dos type of text file
