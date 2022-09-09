@@ -1,9 +1,18 @@
 TODO:
 
--investigate the equivalent in Windows environment. For example, find the commands in Windows Power Shell that does:
- -Base64 encode/decode
- -rev - to reverse a string
- -tr - to replace contents of ascii texts with 2 character sequences
+DONE-investigate the equivalent in Windows environment. For example, find the commands in Windows Power Shell that does:
+ DONE-Base64 encode/decode
+ DONE-rev - to reverse a string
+ DONE-tr - to replace contents of ascii texts with 2 character sequences
 DONE-consider to combine and encrypt/decode multiple tags in one go
 -consider to put in proper encryption such as gpg or openssl
 DONE-add salt to the tag mode encryption so that the same text will be enrypted to different results
+
+
+some commands that are useful:
+
+-to get the md5 checksum of a file on windows powershell:
+Get-FileHash <filepath> -Algorithm MD5
+
+-to compare two files on windows powershell:
+diff (cat <file1) (cat <file2>)
