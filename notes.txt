@@ -7,7 +7,8 @@ DONE-investigate the equivalent in Windows environment. For example, find the co
 DONE-consider to combine and encrypt/decode multiple tags in one go
 -consider to put in proper encryption such as gpg or openssl
 DONE-add salt to the tag mode encryption so that the same text will be enrypted to different results
-
+-in linux version (pck_encrypt_decrypt.sh), encryption (mode 'encf') seems to always append a line to the end; for windows version, it doesn't append a line to the end
+ this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
 
 some commands that are useful:
 
