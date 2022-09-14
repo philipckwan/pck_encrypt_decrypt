@@ -22,15 +22,15 @@ $global:password_reversed=""
 $global:password_hash=New-Object system.collections.hashtable
 $result_filename_suffix=""
 $global:is_process_whole_file=$false;
-$globalis_generate_results_in_file=$false;
+$global:is_generate_results_in_file=$false;
 $global:is_encrypt=$false;
 $global:tag_keys=@();
 
-$SALT_SEPARATOR="-"
-$SALT_LENGTH=3
-$is_salt_used=$false
-$salt_num_repeat=0
-$salt_shuffle_idx=0
+$global:SALT_SEPARATOR="-"
+$global:SALT_LENGTH=3
+$global:is_salt_used=$false
+$global:salt_num_repeat=0
+$global:salt_shuffle_idx=0
 
 $base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
 
@@ -81,11 +81,9 @@ function arguments_check {
     #write-host "__is_encrypt:$($is_encrypt);";
 
     if (Test-Path $arg_filepath -PathType Leaf) {
-        write-host "1.0;";
         $global:filepath=(Get-Item $arg_filepath ).DirectoryName;
         $global:filename=(Get-Item $arg_filepath ).Name;
     } elseif (Test-Path $arg_filepath) {
-        write-host "2.0;";
         $global:filepath=(Get-Item $arg_filepath ).FullName;
         $global:filename=$null;
     } else {
@@ -100,17 +98,10 @@ function arguments_check {
 
     if ($null -eq $arg_tag_key) {
         $global:is_process_whole_file=$true
-        #write-host "arguments_check: is_process_whole_file=true;"
+        write-host "arguments_check: is_process_whole_file=true"
     } else {
         $global:is_process_whole_file=$false
-        #write-host "arguments_check: is_process_whole_file=false;"
-        #write-host "arguments_check: tag keys:";
         $global:tag_keys = $arg_tag_key.Split(",");
-        <#
-        for($i=0; $i -lt $tag_keys.Length; $i++) {
-            write-host "[$($tag_keys[$i])];"
-        }
-        #>
     }
 }
 
@@ -128,8 +119,24 @@ function ask_password {
     }
 }
 
+function extract_salt_from_encrypted_text($text) {
+    $global:is_salt_used=$false
+    if ($text.substring(2,1) -eq "$global:SALT_SEPARATOR") {
+        $global:is_salt_used=$true
+        $global:salt_num_repeat=$text.substring(0,1);
+        $global:salt_shuffle_idx=$text.substring(1,1);
+    } else {
+        #write-host "extract_salt_from_encrypted_text: salt is not found"
+    }
+}
+
 function password_process {
-    write-host "password_process: 1.0;"
+    # if encrypt and tag based
+	#  generate $salt_num_repeat and $salt_shuffle_idx,then apply to $password_processed and $password_reversed
+	# if decrypt and tag based
+	#  take from $salt_num_repeat and $salt_shuffle_idx, then apply to $password_processed and $password_reversed
+	# if not tag based (i.e. whole file encrypt/decrypt)
+	#  salt is not supported for this type
     $combined_password_base64_charset="$($password_from_stdin)$($base64_charset)"
     $global:password_processed=""    
     for ($i=0; $i -lt $combined_password_base64_charset.length; $i++) {
@@ -140,6 +147,33 @@ function password_process {
             $global:password_processed="$($global:password_processed)$($thisChar)"
         }
     }
+
+    if ($is_process_whole_file -eq $false) {
+        if ($is_encrypt -eq $true) {
+            # the first salt is the number of times to repeat, $salt_num_repeat
+            $global:salt_num_repeat=get-random -min 1 -max 10
+
+            # the second salt is the index to shuffle from the end, $salt_shuffle_idx
+            $global:salt_shuffle_idx=get-random -min 1 -max 10
+        } else {
+            if ($is_salt_used -eq $true) {
+                # $salt_num_repeat and $salt_shuffle_idx should already set at this point
+            }
+        }
+        #write-host "__password_processed START:[$($password_processed)]; $salt_num_repeat; $salt_shuffle_idx;"
+        if ($salt_num_repeat -gt 0) {
+            #$salt_shuffle_idx_neg=$salt_shuffle_idx*-1;
+            for ($i = 0; $i -lt $salt_num_repeat; $i++) {
+                $pwd_salt=$password_processed.substring($password_processed.length-$salt_shuffle_idx);
+                $pwd_salt = $pwd_salt[$pwd_salt.length..0] -join ""
+                #write-host "__pwd_salt:[$($pwd_salt)]"
+                $global:password_processed="$($pwd_salt)$($password_processed.substring(0, $password_processed.length-$salt_shuffle_idx))"
+                #write-host "__password_processed:[$($password_processed)]"
+            }
+            #write-host "__password_processed END:[$password_processed]"
+        }
+    }
+
     $global:password_reversed=$global:password_processed[$global:password_processed.Length..0] -join ""
 
     # in windows, we have to use a hash table to shuffle the base64 char, because windows doesn't have the 'tr' command
@@ -153,12 +187,14 @@ function password_process {
 }
 
 function do_work {
+    <#
     write-host "do_work: filepath:[$($filepath)];";
     write-host "do_work: filename:[$($filename)];";
     write-host "do_work: password_from_stdin:[$($password_from_stdin)];"
     write-host "do_work: is_process_whole_file:[$($is_process_whole_file)];"
     write-host "do_work: is_encrypt:[$($is_encrypt)];"
     write-host "do_work: is_generate_results_in_file:[$($is_generate_results_in_file)];"
+    #>
     Push-Location $filepath
     [Environment]::CurrentDirectory = (Get-Location -PSProvider FileSystem).ProviderPath
     if ($null -eq $filename) {
@@ -169,16 +205,15 @@ function do_work {
         }
     } else {
         write-host "do_work: filename is defined, specific file based"
-            do_work_on_a_file($filename)
+        do_work_on_a_file($filename)
     }
-    Pop-Location
+    [void](Pop-Location)
 
 }
 
 function do_work_on_a_file($f) {
     $fB64="$($f).b64e"
     $g="$($f).$($arg_base64_option)"
-    write-host "do_work_on_a_file: f:[$($f)]; g:[$($g)];"
     $matched_text=""
     $result=""
     $results_with_tags=""
@@ -186,13 +221,12 @@ function do_work_on_a_file($f) {
 
     if ($is_generate_results_in_file -eq $true) {
         write-host "do_work_on_a_file: will generate a file from: [$f] to:[$g]"
-        #New-Item $g
+        [void](New-Item $g)
     }
 
     if ($is_process_whole_file -eq $true) {
         password_process
         if ($is_generate_results_in_file -eq $false -and $is_encrypt -eq $true) {
-            write-host "do_work_on_a_file: 1.0"
             $by = [char[]][Convert]::ToBase64String([IO.File]::ReadAllBytes($f));
             [IO.File]::WriteAllBytes($fB64, $by)
             $b64Tmp = [IO.File]::ReadAllText($fB64);
@@ -202,7 +236,6 @@ function do_work_on_a_file($f) {
             }
             write-host $b64EncSB.ToString()
         } elseif ($is_generate_results_in_file -eq $true -and $is_encrypt -eq $true) {
-            write-host "do_work_on_a_file: 2.0"
             $by = [char[]][Convert]::ToBase64String([IO.File]::ReadAllBytes($f));
             [IO.File]::WriteAllBytes($fB64, $by)
             $b64Tmp = [IO.File]::ReadAllText($fB64);
@@ -212,7 +245,6 @@ function do_work_on_a_file($f) {
             }
             [IO.File]::WriteAllText($g, $b64EncSB.ToString())
         } elseif ($is_generate_results_in_file -eq $false -and $is_encrypt -eq $false) {
-            write-host "do_work_on_a_file: 3.0"
             $encTmp = [IO.File]::ReadAllText($f)
             $b64DecSB = [System.Text.StringBuilder]::new()
             for ($i = 0; $i -lt $encTmp.length; $i++) {
@@ -223,7 +255,6 @@ function do_work_on_a_file($f) {
             $text = [System.Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($b64Txt))
             write-host $text
         } elseif ($is_generate_results_in_file -eq $true -and $is_encrypt -eq $false) {
-            write-host "do_work_on_a_file: 4.0;"
             $encTmp = [IO.File]::ReadAllText($f)
             $b64DecSB = [System.Text.StringBuilder]::new()
             for ($i = 0; $i -lt $encTmp.length; $i++) {
@@ -235,11 +266,78 @@ function do_work_on_a_file($f) {
             [IO.File]::WriteAllBytes($g,$by);
         } 
     } else {
-        write-host "do_work_on_a_file: 5.0 ERROR - function to be implemented..."
+        [System.IO.File]::ReadLines($f) | ForEach-Object {
+            $tag_found=$false
+            for($i=0; $i -lt $tag_keys.Length; $i++) {
+                $tag_key_head = "<$($tag_keys[$i])>"
+                $tag_key_tail = "</$($tag_keys[$i])>"
+                $tag_key_head_matched_idx = $_.indexof($tag_key_head);
+                if ($tag_key_head_matched_idx -ge 0) {
+                    $text_before_matched = $_.substring(0, $tag_key_head_matched_idx)
+                    $tag_key_tail_matched_idx = $_.lastindexof($tag_key_tail);
+                    if ($tag_key_tail_matched_idx -gt $tag_key_head_matched_idx) {
+                        $text_after_matched = $_.substring($tag_key_tail_matched_idx + $tag_key_tail.Length);
+                        $tag_found=$true
+                        $matched_found=$true
+                        $matched_text = $_.substring($tag_key_head_matched_idx + $tag_key_head.length, $tag_key_tail_matched_idx - ($tag_key_head_matched_idx + $tag_key_head.length));
+
+                        if ($is_encrypt -eq $false) {
+                            extract_salt_from_encrypted_text($matched_text)
+                            if ($is_salt_used -eq $true) {
+                                $matched_text=$matched_text.substring($global:SALT_LENGTH)
+                            }
+                        } 
+
+                        password_process
+
+                        #write-host "__matched_text:[$matched_text]";
+                        #write-host "__password_processed:[$global:password_processed]"
+                        #write-host "__password_reversed: [$global:password_reversed]"
+                        #write-host "__salt_num_repeat:[$global:salt_num_repeat]"
+                        #write-host "__salt_shuffle_idx:[$global:salt_shuffle_idx]"
+                        if ($is_encrypt -eq $true) {
+                            $matched_text_bytes = [System.Text.Encoding]::ASCII.GetBytes($matched_text)
+                            $matched_text_b64=[Convert]::ToBase64String($matched_text_bytes);
+                            $b64EncSB = [System.Text.StringBuilder]::new()
+                            $b64EncSB.append("$salt_num_repeat$salt_shuffle_idx$SALT_SEPARATOR")
+                            for ($j = 0; $j -lt $matched_text_b64.length; $j++) {
+                                [void]$b64EncSB.append($password_hash["$($matched_text_b64[$j])"])
+                            }
+                            $results = $b64EncSB.ToString();
+                            #write-host "__results:[$results]"
+                        } else {
+                            $b64DecSB = [System.Text.StringBuilder]::new()
+                            for ($i = 0; $i -lt $matched_text.length; $i++) {
+                                [void]$b64DecSB.append($password_hash["$($matched_text[$i])"])
+                            }
+                            $results = [System.Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($b64DecSB.ToString()))
+                            #write-host "__decrypted: results:[$results]"
+                        }
+                        $results_with_tags="$tag_key_head$results$tag_key_tail"
+
+                        if ($is_generate_results_in_file -eq $true) {
+                            "$text_before_matched$results_with_tags$text_after_matched" >> $g
+                        } else {
+                            write-host "RESULTS: [$results_with_tags]"
+                        }
+                    }
+                }
+                #write-host "[$($tag_keys[$i])];"
+                
+            }
+            if ($tag_found -eq $false) {
+                if ($is_generate_results_in_file -eq $true) {
+                    "$_" >> $g
+                }
+            }
+        }
+        if ($matched_found -eq $false) {
+            write-host "WARN: No matched text is found."
+        }
     }
 }
 
-write-host "win_pck_encrypt_decrypt: v0.2 START;";
+write-host "win_pck_encrypt_decrypt: v0.3 START;";
 
 arguments_check;
 ask_password;

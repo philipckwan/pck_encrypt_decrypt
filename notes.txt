@@ -7,7 +7,11 @@ DONE-investigate the equivalent in Windows environment. For example, find the co
 DONE-consider to combine and encrypt/decode multiple tags in one go
 -consider to put in proper encryption such as gpg or openssl
 DONE-add salt to the tag mode encryption so that the same text will be enrypted to different results
-
+-feature: filename encrypt
+-feature: header encrypt, i.e. encrypt the first 100 bytes
+DONE-for .sh; use line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
+-command line option to directly put the string to encrypt/decrypted
+-there are still some line break issues, i.e. when decrypt using .ps1 with a file encrypted by .sh
 
 some commands that are useful:
 
