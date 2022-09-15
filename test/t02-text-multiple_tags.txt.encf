@@ -1,0 +1,27 @@
+This text file will be partially encrypted.
+
+You may decrypt all tags in this file with password:
+quickBROWNfox
+
+These should all be decrypted to:"helloworld"
+<enc-01>52-Ac9jCcV2C2Rj6aQ=</enc-01>
+<enc-01>86-KygwJy39J9bwOn7=</enc-01>
+<enc-01>25-wc9lycV2y2Rl6eQ=</enc-01>
+<enc-01>36-PzhAQzxRQRmAis8=</enc-01>
+<enc-01>68-QmkCPm1/P/hCut5=</enc-01>
+
+This should also be decrypted to:"helloworld"
+<enc-02>96-0LyKZLNcZctKbEB=</enc-02>
+
+This should be decrypted to:"ok"
+<enc-03>85-sXbo</enc-03>
+
+This should also be decrypted to:"ok"
+<enc-04>42-wZdo</enc-04>
+
+This should also be decrypted to:"ok"
+<enc-03>23-pUq9</enc-03>
+
+My 12 recovery phrases (this is fake of course), encrypt and decrypt with tag key 'wallet':
+<xxxxxx>happy sad eye ear mouth nose fish tank breakfast computer apple orange</xxxxxx>
+<wallet>39-6SQ3RTB+RvQBUSJzrGkopnU+7uet8S++7fe5rGkf6nqlUTc/7f0+pXVopu1fpnqsUSq27nkt8SJ4USQ3RSjoUSe4puzXrFl=</wallet>

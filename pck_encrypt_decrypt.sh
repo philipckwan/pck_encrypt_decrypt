@@ -2,7 +2,7 @@
 
 #
 # pck_encrypt_decrypt.sh
-# v1.6
+# v1.7
 # Author: philipckwan@gmail.com
 #
 # This is an encryption and decryption tool based on some common Linux commands, run in bash script.
@@ -27,6 +27,8 @@
 # -update v1.6 (20220428)
 # fix an issue with handling windows/dos type of text file, tag key matching does not work because of the
 #  newline/linefeed difference between dos and unix
+# -update v1.7 (20220915)
+# use something like line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
 #
 BASE64=base64
 BASENAME=basename
@@ -64,6 +66,7 @@ SALT_LENGTH=3
 is_salt_used=false
 salt_num_repeat=0
 salt_shuffle_idx=0
+matchedIdx=0
 
 base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
 
@@ -185,7 +188,6 @@ function ask_password {
 
 function extract_salt_from_encrypted_text {
 	text=$1
-	#echo "text:[$text]"
 
 	is_salt_used=false
 	if [ "${text:2:1}" == "$SALT_SEPARATOR" ] ; then
@@ -243,13 +245,9 @@ function password_process {
 				password_processed="${pwd_salt}${pwd_head}"
 			done
 		fi
-		#echo "password_process:2-salt_num_repeat:[$salt_num_repeat]; salt_shuffle_idx:[$salt_shuffle_idx]"
 	fi
 
 	password_reversed=`echo ${password_processed} | $REV`
-	
-	#echo "password_process:2-password_processed: [${password_processed}]"
-	#echo "password_process:2-password_reversed:  [${password_reversed}]"
 }
 
 function do_work {
@@ -300,44 +298,47 @@ function do_work_on_a_file {
 			do
 				tag_key_head="<${tag_key}>"
             	tag_key_tail="</${tag_key}>"
-				if [[ $line == ${tag_key_head}* && $line == *${tag_key_tail}* ]]
+				stringIndexOf "$line" "$tag_key_head"
+				tag_key_head_matched_idx=$matchedIdx
+				#echo "__line:[$line]; tag_key_head_matched_idx:[$tag_key_head_matched_idx];"
+				if [ ${tag_key_head_matched_idx} -ge 0 ]
 				then
-					#echo "do_work_on_a_file: line found: [$line]";
-					tag_found=true
-					matched_found=true
-					tmp=${line#*${tag_key_head}}
-					matched_text=${tmp%${tag_key_tail}*} 
+					text_before_matched=${line:0:$tag_key_head_matched_idx}
+					stringIndexOf "$line" "$tag_key_tail"
+					tag_key_tail_matched_idx=$matchedIdx
+					if [ ${tag_key_tail_matched_idx} -gt ${tag_key_head_matched_idx} ]
+					then
+						text_after_matched=${line:$tag_key_tail_matched_idx + ${#tag_key_tail}}
+						tag_found=true
+						matched_found=true
+						matched_text=${line:$tag_key_head_matched_idx+${#tag_key_head}:$tag_key_tail_matched_idx-($tag_key_head_matched_idx+${#tag_key_head})}
 
-					if [ "${is_encrypt}" = false ] ; then
-						extract_salt_from_encrypted_text "${matched_text}"
-						if [ "${is_salt_used}" = true ] ; then
-							matched_text=${matched_text:${SALT_LENGTH}}
+						if [ "${is_encrypt}" = false ] ; then
+							extract_salt_from_encrypted_text "${matched_text}"
+							if [ "${is_salt_used}" = true ] ; then
+								matched_text=${matched_text:${SALT_LENGTH}}
+							fi
 						fi
-					fi
 
-					password_process
+						password_process
 
-					if [ "${is_encrypt}" = true ] ; then
-						results=`echo "${matched_text}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
-						results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
-						#echo "results:[${results}]"
-					else
-						#echo "do_work_on_a_file: matched_text:[${matched_text}]"
-						results=`echo "${matched_text}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
+						if [ "${is_encrypt}" = true ] ; then
+							results=`echo "${matched_text}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
+							results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
+							#echo "results:[${results}]"
+						else
+							#echo "do_work_on_a_file: matched_text:[${matched_text}]"
+							results=`echo "${matched_text}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
+						fi
+						results_with_tags="${tag_key_head}${results}${tag_key_tail}"
+						
+						if [ "${is_generate_results_in_file}" = true ] ; then
+							echo "$text_before_matched$results_with_tags$text_after_matched" >> $g
+						else
+							echo "RESULTS: [$results_with_tags]"
+						fi
+						break						
 					fi
-					results_with_tags="${tag_key_head}${results}${tag_key_tail}"
-					
-					if [ "${is_generate_results_in_file}" = true ] ; then
-						echo "$results_with_tags" >> $g
-					else
-						echo "RESULTS: [$results_with_tags]"
-					fi
-					break
-				else
-					:
-					#if [[ "${is_generate_results_in_file}" = true ]] ; then
-					#	echo "$line" >> $g
-					#fi
 				fi
 			done
 			if [ "${tag_found}" = false ] ; then
@@ -350,14 +351,31 @@ function do_work_on_a_file {
 			echo "WARN: No matched text is found."
 		fi	
 	fi
+}
 
-
+function stringIndexOf {
+    #set matchedIdx with  the index of a text matched with a string, -1 if not found
+    text=$1
+    match=$2
+    local text_before_matched=${text%%$match*}
+    local text_after_matched=${text##*$match}
+    local text_len=${#text}
+    local text_before_matched_len=${#text_before_matched}
+    local text_after_matched_len=${#text_after_matched}
+    if (($text_len == $text_before_matched_len && $text_len == $text_after_matched_len))
+    then
+        # match not found
+        #echo "stringIndexOf: match not found"
+        matchedIdx=-1
+    else
+        matchedIdx=$text_before_matched_len
+        matched_text=
+    fi   
 }
 
 commands_check
 arguments_check 
 ask_password
-#password_process
 do_work
 exit 0
 

@@ -1,0 +1,24 @@
+t01-text-tag_key_within_line
+
+You may decrypt all tags in this file with password:
+qazWSX468
+
+#1 - full line with tag key, results should be: 
+<xxxxxx>12345abcde 00000</xxxxxx>
+<enc-01>18-YP2uV+NpMeVcLw6SY+6SY6g=</enc-01>
+
+#2 - full line with tag key, results should be an empty space:
+<xxxxxx> </xxxxxx>
+<enc-01>25-9Wj=</enc-01>
+
+#3 - tag key within line, results should matched:
+this part is not encrypted<xxxxxx>ironman batman ~!@#$%^&*()_+,./<>?;':"[]\{}|</xxxxxx>this part is not encrypted either
+this part is not encrypted<enc-01>43-CG8fxpRrxsqsVG1jVEHwvsSd6c2oGsVB/aov/cge+DgL3Dik5s8xGYbNvGg/</enc-01>this part is not encrypted either
+
+#4 - results should be:
+<xxxxxx>qwerty uiop[]</xxxxxx>
+<enc-01>65-6e4Z61rgDCu38pQ8eB2=</enc-01>
+
+#5 - another tag key, results should be:
+<xxxxxx>qwerty uiop[]</xxxxxx>
+<enc-02>92-MTJBMyS3gf6wL5lLTWA=</enc-02>

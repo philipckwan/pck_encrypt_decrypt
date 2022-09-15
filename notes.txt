@@ -11,7 +11,7 @@ DONE-add salt to the tag mode encryption so that the same text will be enrypted 
  this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
 -feature: filename encrypt
 -feature: header encrypt, i.e. encrypt the first 100 bytes
--for .sh; use line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
+DONE(v1.7)-for .sh; use something like line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
 -command line option to directly put the string to encrypt/decrypted
 -there are still some line break issues, i.e. when decrypt using .ps1 with a file encrypted by .sh
 
