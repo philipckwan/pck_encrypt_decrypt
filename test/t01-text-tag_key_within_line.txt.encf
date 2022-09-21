@@ -1,7 +1,15 @@
 t01-text-tag_key_within_line
 
-You may decrypt all tags in this file with password:
+Decrypt all tags (enc-01, enc-02) in this file:
+test/t01-text-tag_key_within_line.txt.encf
+with password:
 qazWSX468
+
+i.e. 
+$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf decf enc-01,enc-02
+
+The resulting file will be generated at:
+test/t01-text-tag_key_within_line.txt.encf.decf
 
 #1 - full line with tag key, results should be: 
 <xxxxxx>12345abcde 00000</xxxxxx>

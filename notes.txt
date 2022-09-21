@@ -14,6 +14,7 @@ DONE-add salt to the tag mode encryption so that the same text will be enrypted 
 DONE(v1.7)-for .sh; use something like line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
 -command line option to directly put the string to encrypt/decrypted
 -there are still some line break issues, i.e. when decrypt using .ps1 with a file encrypted by .sh
+-for decrypt, if tag not found, got error "Invalid character in input stream.", should make it more user friendly such as "tag not found"
 
 some commands that are useful:
 

@@ -1,7 +1,12 @@
-This text file will be partially encrypted.
+t02-text-multiple_tags.txt.encf
 
-You may decrypt all tags in this file with password:
+Decrypt all tags (enc-01, enc-02, enc-03, enc-04, wallet) in this file:
+test/t02-text-multiple_tags.txt.encf
+with password:
 quickBROWNfox
+
+i.e. 
+$ ./pck_encrypt_decrypt.sh test/t02-text-multiple_tags.txt.encf decf enc-01,enc-02,enc-03,enc-04,wallet
 
 These should all be decrypted to:"helloworld"
 <enc-01>52-Ac9jCcV2C2Rj6aQ=</enc-01>

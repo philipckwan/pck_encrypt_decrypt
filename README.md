@@ -1,7 +1,9 @@
 PCK Encrypt Decrypt
 =
 
-PCK Encrypt Decrypt is a shell script, Linux commands based tool that can encrypt and decrypt data files.
+PCK Encrypt Decrypt is encryption and decryption tool.
+It supports both Linux as a shell script, and Windows as a powershell script.
+It can encrypt and decrypt any data files.
 It also has the capability to partially encrypt/decrypt text files.
 
 Features
@@ -17,6 +19,7 @@ Command Arguments
 -
 ```
 pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag keys>]
+pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag keys>]
 ```
 * filepath: relative path and filename, pointing to the file
 * encrypt option: enc | dec | encf | decf <br/>
@@ -35,67 +38,71 @@ Examples
 
 Example 1 - encrypt a whole binary file
 
-This command encrypts the whole pdf file in the test directory:<br/>
-```$ ./pck_encrypt_decrypt.sh test/Philip_substack_cryptography.pdf encf ```
+This command encrypts the whole image file in the test directory:<br/>
+```$ ./pck_encrypt_decrypt.sh test/apple_on_a_tree.jpg encf ```
 
-The output is saved as a new file Philip_substack_cryptography.pdf.encf in the same folder.<br/>
-I entered `ironman` as the password, which can then be used to decrypt the file
+The output is saved as a new file apple_on_a_tree.jpg.encf in the same folder.<br/>
+I entered `appletree` as the password, which can then be used to decrypt the file
 
 I can then decrypt the file and save it in the same folder:<br/>
-```$ ./pck_encrypt_decrypt.sh test/Philip_substack_cryptography.pdf.encf decf```
+```$ ./pck_encrypt_decrypt.sh test/apple_on_a_tree.jpg.encf decf```
 
-Example 2 - encrypt a whole text file, then decrypt and only show the results in console
+Example 2 - encrypt tags within a text file, then decrypt and save the file to filesystem
 
-This command encrypts the whole text file in the test directory:<br/>
-```$ ./pck_encrypt_decrypt.sh test/internet_and_software_evolution.txt encf```
+Decrypt all tags (enc-01, enc-02) in this file:<br/>
+test/t01-text-tag_key_within_line.txt.encf<br/>
+with password:<br/>
+qazWSX468<br/>
 
-The output is saved as a new file nternet_and_software_evolution.txt.encf<br/>
-I also used `ironman` as the password.
+i.e. 
+```$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf decf enc-01,enc-02```
 
-I then decrypt it but have the results display on the console. In other words, it does not save the decrypted file into the filesystem:<br/>
-```$ ./pck_encrypt_decrypt.sh test/internet_and_software_evolution.txt.encf dec```
+The resulting file will be generated at:<br/>
+test/t01-text-tag_key_within_line.txt.encf.decf
 
-Example 3 - encrypt partial of a text file, then decrypt the same section in console
+Example 3 - encrypt tags within a text file, then decrypt the encrypted sections and display in console
 
-This command encrypts the line in the text file that is enclosed in <enc-01></enc-01> tag:<br/>
-```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01```
+Using the same password as the previous example, but use the argument "dec" instead of "decf"
 
-I used `qweRTY22` as the password.
+i.e. 
+```$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf dec enc-01,enc-02```
 
-The resulting file will be all identical to the orginal file except the line where the tag is enclosed.<br/>
-It is changed from:<br/>
-```<enc-01>qUicKBrownFox134</enc-01>```<br/>
-to:<br/>
-```<enc-01>27-A44iKZlfAuOWzs0nHghb+cx=</enc-01>```
-
-I then decrypt the same line and have the results display on console:<br/>
-```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf dec enc-01```
-
-The console displays this one line:<br/>
-```RESULTS: [<enc-01>qUicKBrownFox134</enc-01>]```
-
-Futhermore, for the last example, since there are multiple and different tags to be encrypted, I can put all keys in a comma-separated list:
-```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01,enc-02,enc-04```
-
-I used the same encryption password, which is `qweRTY22`, to encrypt all 3 lines.
-
-To decrypt and only show the results of one or more of the tag, i.e. <br/>
-```$ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt.encf dec enc-02,enc-04```
-
-The console displays this one line:<br/>
-```RESULTS: [<enc-02>passworD3322</enc-02>]```
+The console displays these lines:<br/>
+```
+RESULTS: [<enc-01>12345abcde 00000</enc-01>]
+RESULTS: [<enc-01> </enc-01>]
+RESULTS: [<enc-01>ironman batman ~!@#$%^&*()_+,./<>?;':"[]\{}|</enc-01>]
+RESULTS: [<enc-01>qwerty uiop[]</enc-01>]
+RESULTS: [<enc-02>qwerty uiop[]</enc-02>]
+```
 
 Example 4 - encrypting the same text results in different output because of salt
 
-In text_multiple_tags_with_salt.txt, multiple lines are identical (i.e. they are "helloworld" or "ok").<br/>
+In this file:<br/>
+test/t02-text-multiple_tags.txt.encf<br/>
+several encrypted text are identical (i.e. they are "helloworld" or "ok").<br/>
 But the resulting encrypted tags are different, because salt is being applied to the encryption process.<br/>
 When salt is applied, the encrypted tag contect will contains a prefix of "xx-" where xx are 2 numbers.<br/>
 These 2 numbers are salt used to generated different output when encrypting.<br/>
 But when decrypting, given the salt is provided and the same password is used, it will be able to recover back to the original text.<br/>
 See <https://en.wikipedia.org/wiki/Salt_(cryptography)><br/>
 
-Try decrypt this file, with the password `qweRTY22`, to see.<br/>
-```$ ./pck_encrypt_decrypt.sh test/text_multiple_tags_with_salt.txt.encf decf enc-01,enc-02,enc-03,enc-04```
+Decrypt all tags (enc-01, enc-02, enc-03, enc-04, wallet) in this file:<br/>
+test/t02-text-multiple_tags.txt.encf<br/>
+with password:<br/>
+quickBROWNfox<br/>
+
+i.e. 
+```$ ./pck_encrypt_decrypt.sh test/t02-text-multiple_tags.txt.encf decf enc-01,enc-02,enc-03,enc-04,wallet```
+
+Windows Powershell support
+-
+
+To run this tool in Windows, execute the Windows version of the script in a powershell terminal:
+win_pck_encrypt_decrypt.ps1
+
+The rest of the command line syntax is the same as the Linux shell version.
+e.g.
 
 Cryptography analysis and rational of this tool
 -
@@ -140,3 +147,6 @@ Change logs
 Refer to the script pck_encrypt_decrypt.sh for more details. <br/>
 Update v1.6 (28-4-2022):
 * fix an issue with handling windows/dos type of text file
+
+Update v1.7 (16-9-2022):
+* supports windows powershell (.ps1) version

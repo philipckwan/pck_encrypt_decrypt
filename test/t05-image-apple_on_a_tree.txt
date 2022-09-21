@@ -1,0 +1,10 @@
+decrypt this file:
+test/apple_on_a_tree.jpg.encf
+
+with this password:
+appletree
+
+i.e.
+$ ./pck_encrypt_decrypt.sh test/apple_on_a_tree.jpg.encf decf
+
+the resulting file "apple_on_a_tree.jpg.encf.decf" should match with "apple_on_a_tree.jpg"
