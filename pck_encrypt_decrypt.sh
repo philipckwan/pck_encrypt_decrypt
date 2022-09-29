@@ -46,6 +46,7 @@ ARG_KEY_ENCRYPT_IN_MEMORY="enc"
 ARG_KEY_DECRYPT_IN_MEMORY="dec"
 ARG_KEY_ENCRYPT_IN_FILE="encf"
 ARG_KEY_DECRYPT_IN_FILE="decf"
+ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION="decfs"
 
 filename=""
 filepath=""
@@ -59,6 +60,7 @@ result_filename_suffix=""
 is_process_whole_file=false
 is_generate_results_in_file=false
 is_encrypt=false
+is_strip_extension=false
 tag_keys=()
 
 SALT_SEPARATOR="-"
@@ -127,6 +129,12 @@ function arguments_check {
 		command_base64_with_argument="${BASE64} --decode"
 		is_generate_results_in_file=true
 		is_encrypt=false
+	elif [ "$ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION" == "$arg_base64_option" ]
+	then
+		command_base64_with_argument="${BASE64} --decode"
+		is_generate_results_in_file=true
+		is_encrypt=false
+		is_strip_extension=true
 	else
 		echo "arguments_check: ERROR - arg_base64_option is not specified correctly"
 		print_usage_and_exit
@@ -268,7 +276,11 @@ function do_work {
 
 function do_work_on_a_file {
 	f=$1
-	g="${f}.${arg_base64_option}"
+	if [ "${is_strip_extension}" = true ] ; then
+		g="${f%.*}"
+	else
+		g="${f}.${arg_base64_option}"
+	fi
 	matched_text=""
 	results=""
 	results_with_tags=""
