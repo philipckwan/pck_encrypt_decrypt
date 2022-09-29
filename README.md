@@ -17,9 +17,13 @@ This tool:
 
 Command Arguments
 -
+
+Note: To run this tool in Windows, execute the Windows version of the script in a powershell terminal:<br/>
+```win_pck_encrypt_decrypt.ps1```<br/>
+The rest of the command line syntax is the same as the Linux shell version.<br/>
 ```
 pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag keys>]
-pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag keys>]
+win_pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag keys>]
 ```
 * filepath: relative path and filename, pointing to the file
 * encrypt option: enc | dec | encf | decf <br/>
@@ -94,15 +98,6 @@ quickBROWNfox<br/>
 
 i.e. 
 ```$ ./pck_encrypt_decrypt.sh test/t02-text-multiple_tags.txt.encf decf enc-01,enc-02,enc-03,enc-04,wallet```
-
-Windows Powershell support
--
-
-To run this tool in Windows, execute the Windows version of the script in a powershell terminal:
-win_pck_encrypt_decrypt.ps1
-
-The rest of the command line syntax is the same as the Linux shell version.
-e.g.
 
 Cryptography analysis and rational of this tool
 -
