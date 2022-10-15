@@ -2,7 +2,7 @@
 
 #
 # pck_encrypt_decrypt.sh
-# v1.7
+# v1.8
 # Author: philipckwan@gmail.com
 #
 # This is an encryption and decryption tool based on some common Linux commands, run in bash script.
@@ -27,8 +27,13 @@
 # -update v1.6 (20220428)
 # fix an issue with handling windows/dos type of text file, tag key matching does not work because of the
 #  newline/linefeed difference between dos and unix
+#
 # -update v1.7 (20220915)
 # use something like line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
+#
+# -update v1.8  (20221015)
+# add options to encrypt and decrypt from reading stdin
+# also for the stdin option, enhance it to use pbcopy (copy to clipboard)
 #
 BASE64=base64
 BASENAME=basename
@@ -36,17 +41,22 @@ DIRNAME=dirname
 TR=tr
 REV=rev
 READ=read
-
-arg_filepath=$1
-arg_base64_option=$2
-arg_tag_key=$3
-command_base64_with_argument=""
+PBCOPY=pbcopy
 
 ARG_KEY_ENCRYPT_IN_MEMORY="enc"
 ARG_KEY_DECRYPT_IN_MEMORY="dec"
 ARG_KEY_ENCRYPT_IN_FILE="encf"
 ARG_KEY_DECRYPT_IN_FILE="decf"
 ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION="decfs"
+ARG_KEY_ENCRYPT_FROM_STDIN="enci"
+ARG_KEY_DECRYPT_FROM_STDIN="deci"
+ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET="decis"
+ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD="decic"
+
+arg_filepath=""
+arg_base64_option=""
+arg_tag_key=""
+command_base64_with_argument=""
 
 filename=""
 filepath=""
@@ -61,7 +71,11 @@ is_process_whole_file=false
 is_generate_results_in_file=false
 is_encrypt=false
 is_strip_extension=false
+is_from_stdin=false
+is_show_b64_charset=false
+is_copy_to_clipboard=false
 tag_keys=()
+encrypted_from_stdin=""
 
 SALT_SEPARATOR="-"
 SALT_LENGTH=3
@@ -74,12 +88,14 @@ base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba
 
 function print_usage_and_exit {
 	echo ""
-	echo "Usage: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
+	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
 	echo "-encrypt option: enc | dec | encf | decf"
 	echo "-tag key: < and > will be added to enclose tag key; i.e. pck-01 becomes <pck-01> and </pck-01>"
 	echo " it is expected the tag is enlosed like xml tags, i.e. <pck-01> and </pck-01> enclosed the inline text to be encrypted"
 	echo " if <tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted"
+	echo "Usage 2: pck_encrypt_decrypt.sh enci|deci"
+	echo "-encrypt and decrypt by promoting (reading from stdin)"
 	echo ""
 	exit 1
 }
@@ -100,80 +116,110 @@ function commands_check {
 	command_check "${TR}"
 	command_check "${REV}"
 	command_check "${READ}"
+	command_check "${PBCOPY}"
 }
 
 function arguments_check {
-	if [ -z "$arg_filepath" ] || [ -z "$arg_base64_option" ]
+	if [ "$ARG_KEY_DECRYPT_FROM_STDIN" == "$1" ] || [ "$ARG_KEY_ENCRYPT_FROM_STDIN" == "$1" ] || [ "$ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET" == "$1" ] || [ "$ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$1" ] 
 	then
-		echo "arguments_check: ERROR - not all arguments are specified"
-		print_usage_and_exit
+		arg_base64_option=$1
+		is_from_stdin=true
+		if [ "$ARG_KEY_ENCRYPT_FROM_STDIN" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64}"
+			is_encrypt=true	
+		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64} --decode"
+			is_encrypt=false
+		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64} --decode"
+			is_encrypt=false
+			is_show_b64_charset=true
+		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64} --decode"
+			is_encrypt=false
+			is_copy_to_clipboard=true
+		fi
+		echo "arguments_check: is_encrypt: [$is_encrypt]"
+		echo "arguments_check: is_from_stdin: [$is_from_stdin]"
+		echo "arguments_check: is_show_b64_charset: [$is_show_b64_charset]"
+		echo "arguments_check: is_copy_to_clipboard: [$is_copy_to_clipboard]"
+	else
+		arg_filepath=$1
+		arg_base64_option=$2
+		arg_tag_key=$3
+		if [ -z "$arg_filepath" ] || [ -z "$arg_base64_option" ]
+		then
+			echo "arguments_check: ERROR - not all arguments are specified"
+			print_usage_and_exit
+		fi
+
+		if [ "$ARG_KEY_ENCRYPT_IN_MEMORY" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64}"
+			is_encrypt=true
+		elif [ "$ARG_KEY_DECRYPT_IN_MEMORY" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64} --decode"
+			is_encrypt=false
+		elif [ "$ARG_KEY_ENCRYPT_IN_FILE" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64}"
+			is_generate_results_in_file=true
+			is_encrypt=true
+		elif [ "$ARG_KEY_DECRYPT_IN_FILE" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64} --decode"
+			is_generate_results_in_file=true
+			is_encrypt=false
+		elif [ "$ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION" == "$arg_base64_option" ]
+		then
+			command_base64_with_argument="${BASE64} --decode"
+			is_generate_results_in_file=true
+			is_encrypt=false
+			is_strip_extension=true
+		else
+			echo "arguments_check: ERROR - arg_base64_option is not specified correctly"
+			print_usage_and_exit
+		fi
+		
+		if [ -f $arg_filepath ]
+		then
+			filepath=`${DIRNAME} ${arg_filepath}`
+			filename=`${BASENAME} ${arg_filepath}`
+		elif [ -d $arg_filepath ]
+		then
+			filepath=${arg_filepath}
+			filename=""
+		else
+			echo "arguments_check: ERROR - [$arg_filepath] is not a valid file or directory"
+			print_usage_and_exit
+		fi
+		echo "arguments_check: arg_filepath: [$arg_filepath]"
+		echo "arguments_check: arg_base64_option: [$arg_base64_option]"
+		echo "arguments_check: filepath: [$filepath]"
+		echo "arguments_check: filename: [$filename]"
 	fi
 
-	if [ "$ARG_KEY_ENCRYPT_IN_MEMORY" == "$arg_base64_option" ]
+	if [ "${is_from_stdin}" = true ]
 	then
-		command_base64_with_argument="${BASE64}"
-		is_generate_results_in_file=false
-		is_encrypt=true
-	elif [ "$ARG_KEY_DECRYPT_IN_MEMORY" == "$arg_base64_option" ]
-	then
-		command_base64_with_argument="${BASE64} --decode"
-		is_generate_results_in_file=false
-		is_encrypt=false
-	elif [ "$ARG_KEY_ENCRYPT_IN_FILE" == "$arg_base64_option" ]
-	then
-		command_base64_with_argument="${BASE64}"
-		is_generate_results_in_file=true
-		is_encrypt=true
-	elif [ "$ARG_KEY_DECRYPT_IN_FILE" == "$arg_base64_option" ]
-	then
-		command_base64_with_argument="${BASE64} --decode"
-		is_generate_results_in_file=true
-		is_encrypt=false
-	elif [ "$ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION" == "$arg_base64_option" ]
-	then
-		command_base64_with_argument="${BASE64} --decode"
-		is_generate_results_in_file=true
-		is_encrypt=false
-		is_strip_extension=true
-	else
-		echo "arguments_check: ERROR - arg_base64_option is not specified correctly"
-		print_usage_and_exit
-	fi
-	
-	if [ -f $arg_filepath ]
-	then
-		filepath=`${DIRNAME} ${arg_filepath}`
-		filename=`${BASENAME} ${arg_filepath}`
-	elif [ -d $arg_filepath ]
-	then
-		filepath=${arg_filepath}
-		filename=""
-	else
-		echo "arguments_check: ERROR - [$arg_filepath] is not a valid file or directory"
-		print_usage_and_exit
-	fi
-	
-	echo "arguments_check: arg_filepath: [$arg_filepath]"
-	echo "arguments_check: arg_base64_option: [$arg_base64_option]"
-	echo "arguments_check: filepath: [$filepath]"
-	echo "arguments_check: filename: [$filename]"
-
-	if  [ -z "$arg_tag_key" ]
+		${READ} -p "Please type or paste the encrypted text: " encrypted_from_stdin
+	elif  [ -z "$arg_tag_key" ]
 	then
 		is_process_whole_file=true
-		echo "arguments_check: is_process_whole_file=true"
+		echo "arguments_check: is_process_whole_file: [$is_process_whole_file]"
 	else 
 		is_process_whole_file=false
 		tag_keys=(${arg_tag_key//,/ })
-		#tag_key_head="<${arg_tag_key}>"
-		#tag_key_tail="</${arg_tag_key}>"
 		echo "arguments_check: tag keys:"
 		for item in "${tag_keys[@]}"
 		do
 			echo "[${item}];"
 		done
 	fi
-	
 }
 
 function ask_password {
@@ -190,8 +236,6 @@ function ask_password {
 			exit 1
 		fi	
 	fi
-	#echo "password_from_stdin: [$password_from_stdin]"
-	#echo "password_confirm_from_stdin: [$password_confirm_from_stdin]"
 }
 
 function extract_salt_from_encrypted_text {
@@ -228,7 +272,6 @@ function password_process {
 			password_processed="${password_processed}${thisChar}"
 		fi
 	done
-	#echo "password_process:1-password_processed: [${password_processed}]"
 
 	if [ "${is_process_whole_file}" = false ] ; then
 		if [ "${is_encrypt}" = true ] ; then
@@ -254,23 +297,48 @@ function password_process {
 			done
 		fi
 	fi
-
 	password_reversed=`echo ${password_processed} | $REV`
 }
 
 function do_work {
-	cd $filepath
-	if [ -z "$filename" ]
+	if [ "${is_from_stdin}" = true ]
 	then
-		echo "do_work: filename is not defined, directory based"
-		shopt -s nullglob
-		for f in *; do		
-			do_work_on_a_file $f
-		done
+		if [ "${is_encrypt}" = false ] ; then
+			extract_salt_from_encrypted_text "${encrypted_from_stdin}"
+			if [ "${is_salt_used}" = true ] ; then
+				encrypted_from_stdin=${encrypted_from_stdin:${SALT_LENGTH}}
+			fi
+		fi
+		password_process	
+		if [ "${is_encrypt}" = false ] ; then
+			results=`echo "${encrypted_from_stdin}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
+		else
+			results=`echo "${encrypted_from_stdin}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
+			results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
+		fi		
+		if [ "${is_show_b64_charset}" = true ] ; then
+			echo "password_processed: [$password_processed]"
+			echo "password_reversed:  [$password_reversed]"
+		fi
+		if [ "${is_copy_to_clipboard}" = true ] ; then
+			echo "$results" | ${PBCOPY}
+		else
+			echo "$results"
+		fi
 	else
-		echo "do_work: filename is defined, specific file based"
-		f=$filename
-		do_work_on_a_file $f
+		cd $filepath
+		if [ -z "$filename" ]
+		then
+			echo "do_work: filename is not defined, directory based"
+			shopt -s nullglob
+			for f in *; do		
+				do_work_on_a_file $f
+			done
+		else
+			echo "do_work: filename is defined, specific file based"
+			f=$filename
+			do_work_on_a_file $f
+		fi
 	fi
 }
 
@@ -303,6 +371,7 @@ function do_work_on_a_file {
 			cat $f | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument > $g
 		fi	
 	else
+		echo "-----RESULTS START-----"
 		while IFS= read -r line || [ -n "$line" ];
 		do
 			tag_found=false
@@ -331,9 +400,7 @@ function do_work_on_a_file {
 								matched_text=${matched_text:${SALT_LENGTH}}
 							fi
 						fi
-
 						password_process
-
 						if [ "${is_encrypt}" = true ] ; then
 							results=`echo "${matched_text}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
 							results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
@@ -347,7 +414,7 @@ function do_work_on_a_file {
 						if [ "${is_generate_results_in_file}" = true ] ; then
 							echo "$text_before_matched$results_with_tags$text_after_matched" >> $g
 						else
-							echo "RESULTS: [$results_with_tags]"
+							echo "$text_before_matched$results_with_tags$text_after_matched"
 						fi
 						break						
 					fi
@@ -361,7 +428,8 @@ function do_work_on_a_file {
 		done < $f
 		if [ "${matched_found}" = false ] ; then
 			echo "WARN: No matched text is found."
-		fi	
+		fi
+		echo "-----RESULTS END-----"	
 	fi
 }
 
@@ -386,7 +454,7 @@ function stringIndexOf {
 }
 
 commands_check
-arguments_check 
+arguments_check $@
 ask_password
 do_work
 exit 0

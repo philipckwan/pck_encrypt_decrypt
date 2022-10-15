@@ -5,9 +5,10 @@ DONE-add an option when decrypting and output to file, strip the file extension 
  this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
 -feature: filename encrypt
 -feature: header encrypt, i.e. encrypt the first 100 bytes
--command line option to directly put the string to encrypt/decrypted
+DONE(v1.8)-read from stdin; command line option to directly put the string to encrypt/decrypted
 -there are still some line break issues, i.e. when decrypt using .ps1 with a file encrypted by .sh
 -for decrypt, if tag not found, got error "Invalid character in input stream.", should make it more user friendly such as "tag not found"
+DONE(v1.8)-enhance to use pbcopy; for the read from stdin option, add an option to use pbcopy to copy to clipboard (i.e. like using ctrl-c)
 
 some commands that are useful:
 
