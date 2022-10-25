@@ -2,39 +2,9 @@
 
 #
 # pck_encrypt_decrypt.sh
-# v1.8
 # Author: philipckwan@gmail.com
 #
-# This is an encryption and decryption tool based on some common Linux commands, run in bash script.
-# For a full explanation of this tool, should refer to the author's github.
-# Some quick highlight of this tool:
-# -it can encrypt and decrypt a whole binary file, in any format. The results is base64 text
-# -it can encrypt and decrypt a segment of a plaintext file. The key is to enclose such text in xml like element as an identifier
-# -the results of the encryption and decryption can be outputted in the terminal, thus only in memory. 
-#  Or it can be outputted into a file, thus persisted into the filesystem.
-# -the encryption and decryption technology is based on base64 encoding and followed by a text shuffling,
-#  based on a passphrase setup by the user upon encryption
-#
-# -update v1.5 (20220419)
-# 1) for the 3rd argument ${arg_tag_key}, now supporting using comma (,) to provide a list of tag keys
-# In other words, the tag should not have comma as it will be used to delimit tag keys
-# e.g.
-# $ ./pck_encrypt_decrypt.sh test/text_partial_encryption.txt encf enc-01,enc-02
-# the above command will encrypt 2 tags in the file, <enc-01> and <enc-02>
-# 2) generate random salts for encryption in tag mode, this will ensure encrypting the same text will result in different outputs
-#  while still can be decrypted properly
-#
-# -update v1.6 (20220428)
-# fix an issue with handling windows/dos type of text file, tag key matching does not work because of the
-#  newline/linefeed difference between dos and unix
-#
-# -update v1.7 (20220915)
-# use something like line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
-#
-# -update v1.8  (20221015)
-# add options to encrypt and decrypt from reading stdin
-# also for the stdin option, enhance it to use pbcopy (copy to clipboard)
-#
+
 BASE64=base64
 BASENAME=basename
 DIRNAME=dirname
@@ -55,8 +25,13 @@ ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD="decic"
 
 arg_filepath=""
 arg_base64_option=""
+arg_encrypt_decrypt_rounds="not set"
 arg_tag_key=""
-command_base64_with_argument=""
+
+MODE_FILE="FILE"
+MODE_TAG="TAG"
+MODE_STDIN="STDIN"
+mode=$MODE_STDIN
 
 filename=""
 filepath=""
@@ -67,11 +42,9 @@ password_from_stdin=""
 password_processed=""
 password_reversed=""
 result_filename_suffix=""
-is_process_whole_file=false
 is_generate_results_in_file=false
 is_encrypt=false
 is_strip_extension=false
-is_from_stdin=false
 is_show_b64_charset=false
 is_copy_to_clipboard=false
 tag_keys=()
@@ -82,11 +55,17 @@ SALT_LENGTH=3
 is_salt_used=false
 salt_num_repeat=0
 salt_shuffle_idx=0
+MULTI_ENCRYPT_LENGTH=4
+is_multi_encrypt_used=false
+encrypt_decrypt_rounds=2
 matchedIdx=0
 
 base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
+password_valid_charset="9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
 
 function print_usage_and_exit {
+	echo ""
+	echo "pck_encrypt_decrypt.sh v1.10"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -94,9 +73,15 @@ function print_usage_and_exit {
 	echo "-tag key: < and > will be added to enclose tag key; i.e. pck-01 becomes <pck-01> and </pck-01>"
 	echo " it is expected the tag is enlosed like xml tags, i.e. <pck-01> and </pck-01> enclosed the inline text to be encrypted"
 	echo " if <tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted"
+	echo ""
 	echo "Usage 2: pck_encrypt_decrypt.sh enci|deci"
 	echo "-encrypt and decrypt by promoting (reading from stdin)"
 	echo ""
+	echo "For encryption, you may optionally provide the number of rounds of encryption to be done, ranges from 1 to 9"
+	echo "The more rounds of encryption is set, the more difficult it is to be decrypted"
+	echo "e.g."
+	echo "$ pck_encrypt_decrypt.sh enci5"
+	echo "The above will run the encryption with 5 rounds"
 	exit 1
 }
 
@@ -120,36 +105,52 @@ function commands_check {
 }
 
 function arguments_check {
-	if [ "$ARG_KEY_DECRYPT_FROM_STDIN" == "$1" ] || [ "$ARG_KEY_ENCRYPT_FROM_STDIN" == "$1" ] || [ "$ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET" == "$1" ] || [ "$ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$1" ] 
+	firstFourCharArg1=${1:0:4}
+	if [[ ! -f $1 && ! -d $1 && ( "$ARG_KEY_DECRYPT_FROM_STDIN" == "$firstFourCharArg1" || "$ARG_KEY_ENCRYPT_FROM_STDIN" == "$firstFourCharArg1" ) ]]
+	#if [ "$ARG_KEY_DECRYPT_FROM_STDIN" == "$1" ] || [ "$ARG_KEY_ENCRYPT_FROM_STDIN" == "$1" ] || [ "$ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET" == "$1" ] || [ "$ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$1" ] 
 	then
 		arg_base64_option=$1
-		is_from_stdin=true
+		last_char=${arg_base64_option:0-1}
+		if [ "$last_char" -eq "$last_char" ] 2>/dev/null; then
+			encrypt_decrypt_rounds=$last_char
+			arg_base64_option=${arg_base64_option%?}
+		fi
+		mode=$MODE_STDIN
 		if [ "$ARG_KEY_ENCRYPT_FROM_STDIN" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64}"
 			is_encrypt=true	
 		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64} --decode"
 			is_encrypt=false
 		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64} --decode"
 			is_encrypt=false
 			is_show_b64_charset=true
 		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64} --decode"
 			is_encrypt=false
 			is_copy_to_clipboard=true
+		else
+			echo "arguments_check: ERROR - arg_base64_option is not specified correctly"
+			print_usage_and_exit
 		fi
+
+		echo "arguments_check: mode: [$mode]"
 		echo "arguments_check: is_encrypt: [$is_encrypt]"
-		echo "arguments_check: is_from_stdin: [$is_from_stdin]"
 		echo "arguments_check: is_show_b64_charset: [$is_show_b64_charset]"
 		echo "arguments_check: is_copy_to_clipboard: [$is_copy_to_clipboard]"
+		
+		if [ "${is_encrypt}" == true ] ; then
+			echo "arguments_check: encrypt_decrypt_rounds: [$encrypt_decrypt_rounds]"
+		fi
 	else
 		arg_filepath=$1
 		arg_base64_option=$2
+		last_char=${arg_base64_option:0-1}
+		if [ "$last_char" -eq "$last_char" ] 2>/dev/null; then
+			encrypt_decrypt_rounds=$last_char
+			arg_base64_option=${arg_base64_option%?}
+		fi
 		arg_tag_key=$3
 		if [ -z "$arg_filepath" ] || [ -z "$arg_base64_option" ]
 		then
@@ -159,25 +160,20 @@ function arguments_check {
 
 		if [ "$ARG_KEY_ENCRYPT_IN_MEMORY" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64}"
 			is_encrypt=true
 		elif [ "$ARG_KEY_DECRYPT_IN_MEMORY" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64} --decode"
 			is_encrypt=false
 		elif [ "$ARG_KEY_ENCRYPT_IN_FILE" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64}"
 			is_generate_results_in_file=true
 			is_encrypt=true
 		elif [ "$ARG_KEY_DECRYPT_IN_FILE" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64} --decode"
 			is_generate_results_in_file=true
 			is_encrypt=false
 		elif [ "$ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION" == "$arg_base64_option" ]
 		then
-			command_base64_with_argument="${BASE64} --decode"
 			is_generate_results_in_file=true
 			is_encrypt=false
 			is_strip_extension=true
@@ -198,27 +194,27 @@ function arguments_check {
 			echo "arguments_check: ERROR - [$arg_filepath] is not a valid file or directory"
 			print_usage_and_exit
 		fi
+
+		if  [ -z "$arg_tag_key" ]
+		then
+			mode=$MODE_FILE			
+		else 
+			mode=$MODE_TAG
+			tag_keys=(${arg_tag_key//,/ })
+		fi
 		echo "arguments_check: arg_filepath: [$arg_filepath]"
-		echo "arguments_check: arg_base64_option: [$arg_base64_option]"
+		echo "arguments_check: is_encrypt: [$is_encrypt]"
+		echo "arguments_check: mode: [$mode]"
 		echo "arguments_check: filepath: [$filepath]"
 		echo "arguments_check: filename: [$filename]"
-	fi
+		if [ "${is_encrypt}" == true ] ; then
+			echo "arguments_check: encrypt_decrypt_rounds: [$encrypt_decrypt_rounds]"
+		fi
 
-	if [ "${is_from_stdin}" = true ]
-	then
-		${READ} -p "Please type or paste the encrypted text: " encrypted_from_stdin
-	elif  [ -z "$arg_tag_key" ]
-	then
-		is_process_whole_file=true
-		echo "arguments_check: is_process_whole_file: [$is_process_whole_file]"
-	else 
-		is_process_whole_file=false
-		tag_keys=(${arg_tag_key//,/ })
-		echo "arguments_check: tag keys:"
-		for item in "${tag_keys[@]}"
-		do
-			echo "[${item}];"
-		done
+		if [[ "${is_generate_results_in_file}" == false && "${mode}" = "${MODE_FILE}" ]] ; then
+				echo "arguments_check: ERROR - encryption and decryption for a whole file in memory is currently not supported"
+				exit 1
+		fi
 	fi
 }
 
@@ -226,6 +222,20 @@ function ask_password {
 	password_confirm_from_stdin=""
 	${READ} -sp "Please enter the password: " password_from_stdin
 	echo ""
+	if [[ ${#password_from_stdin} -lt 3 ]] ; then
+		echo "ERROR - password must be at least 3 characters long."
+		exit 1
+	fi
+	for (( i=0; i<${#password_from_stdin}; i++ )); do
+		aPasswordChar="${password_from_stdin:$i:1}"
+		stringIndexOf $password_valid_charset $aPasswordChar
+		if [[ $matchedIdx -lt 0 ]]
+		then
+			echo "ERROR - password contains invalid character(s)."
+			echo "Please only input alphanumeric characters for password."
+			exit 1
+		fi
+	done
 	if [ "${is_encrypt}" = true ]
 	then
 		${READ} -sp "Please re-enter the password: " password_confirm_from_stdin
@@ -240,16 +250,18 @@ function ask_password {
 
 function extract_salt_from_encrypted_text {
 	text=$1
-
-	is_salt_used=false
 	if [ "${text:2:1}" == "$SALT_SEPARATOR" ] ; then
 		is_salt_used=true
-		# salt separator is found, parse the earlier characters for $salt_num_repeat and $salt_shuffle_idx
 		salt_num_repeat=${text:0:1}
 		salt_shuffle_idx=${text:1:1}
-		#echo "extract_salt_from_encrypted_text: salt is found, salt_num_repeat:[${salt_num_repeat}]; salt_shuffle_idx:[${salt_shuffle_idx}];"
+		encrypt_decrypt_rounds=1
+	elif [ "${text:3:1}" == "$SALT_SEPARATOR" ] ; then
+		is_multi_encrypt_used=true
+		salt_num_repeat=${text:0:1}
+		salt_shuffle_idx=${text:1:1}
+		encrypt_decrypt_rounds=${text:2:1}
 	else
-		:
+		encrypt_decrypt_rounds=1
 		#echo "extract_salt_from_encrypted_text: salt is not found"
 	fi
 }
@@ -265,85 +277,95 @@ function password_process {
 	password_processed=""
 	for (( i=0; i<${#combined_password_base64_charset}; i++ )); do
 		thisChar="${combined_password_base64_charset:$i:1}"
-		if [[ $password_processed == *${thisChar}* ]]
+		if [[ $password_processed != *${thisChar}* ]]
 		then
-			:
-		else
 			password_processed="${password_processed}${thisChar}"
 		fi
 	done
 
-	if [ "${is_process_whole_file}" = false ] ; then
-		if [ "${is_encrypt}" = true ] ; then
-			# the first salt is the number of times to repeat, $salt_num_repeat
-			salt_num_repeat=$(($RANDOM%9+1))
+	if [ "${is_encrypt}" = true ] ; then
+		# the first salt is the number of times to repeat, $salt_num_repeat
+		salt_num_repeat=$(($RANDOM%9+1))
 
-			# the second salt is the index to shuffle from the end, $salt_shuffle_idx
-			salt_shuffle_idx=$(($RANDOM%9+1))
-		else
-			if [ "${is_salt_used}" = true ] ; then
-				# $salt_num_repeat and $salt_shuffle_idx should already set at this point
-				:
-			fi
-		fi
-		
-		if [ ${salt_num_repeat} -gt 0 ] ; then
-			salt_shuffle_idx_neg=$(($salt_shuffle_idx*-1))
-			for (( i=0; i<${salt_num_repeat}; i++ )); do			
-				pwd_salt=`echo ${password_processed:$salt_shuffle_idx_neg} | $REV`
-				head_length=$((${#password_processed}+${salt_shuffle_idx_neg}))
-				pwd_head=${password_processed:0:${head_length}}
-				password_processed="${pwd_salt}${pwd_head}"
-			done
-		fi
+		# the second salt is the index to shuffle from the end, $salt_shuffle_idx
+		salt_shuffle_idx=$(($RANDOM%9+1))
 	fi
+	
+	if [ ${salt_num_repeat} -gt 0 ] ; then
+		salt_shuffle_idx_neg=$(($salt_shuffle_idx*-1))
+		for (( i=0; i<${salt_num_repeat}; i++ )); do			
+			pwd_salt=`echo ${password_processed:$salt_shuffle_idx_neg} | $REV`
+			head_length=$((${#password_processed}+${salt_shuffle_idx_neg}))
+			pwd_head=${password_processed:0:${head_length}}
+			password_processed="${pwd_salt}${pwd_head}"
+		done
+	fi
+	#fi
 	password_reversed=`echo ${password_processed} | $REV`
 }
 
-function do_work {
-	if [ "${is_from_stdin}" = true ]
-	then
-		if [ "${is_encrypt}" = false ] ; then
-			extract_salt_from_encrypted_text "${encrypted_from_stdin}"
-			if [ "${is_salt_used}" = true ] ; then
-				encrypted_from_stdin=${encrypted_from_stdin:${SALT_LENGTH}}
-			fi
+function do_work_on_stdin {
+	${READ} -p "Please type or paste the encrypted text: " encrypted_from_stdin
+	ask_password
+	if [ "${is_encrypt}" = false ] ; then
+		extract_salt_from_encrypted_text "${encrypted_from_stdin}"
+		if [ "${is_salt_used}" = true ] ; then
+			encrypted_from_stdin=${encrypted_from_stdin:${SALT_LENGTH}}
+		elif [ "${is_multi_encrypt_used}" = true ] ; then
+			encrypted_from_stdin=${encrypted_from_stdin:${MULTI_ENCRYPT_LENGTH}}
 		fi
-		password_process	
-		if [ "${is_encrypt}" = false ] ; then
-			results=`echo "${encrypted_from_stdin}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
-		else
-			results=`echo "${encrypted_from_stdin}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
-			results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
-		fi		
-		if [ "${is_show_b64_charset}" = true ] ; then
-			echo "password_processed: [$password_processed]"
-			echo "password_reversed:  [$password_reversed]"
-		fi
-		if [ "${is_copy_to_clipboard}" = true ] ; then
-			echo "$results" | ${PBCOPY}
-		else
-			echo "$results"
+	fi
+	password_process	
+	results="${encrypted_from_stdin}"
+	if [ "${is_encrypt}" = false ] ; then
+		for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+			results=`echo "${results}" | $TR "${password_processed}" "${password_reversed}" 2> /dev/null | ${BASE64} --decode 2> /dev/null`
+		done
+		if [ -z "${results}" ]  ; then
+			echo  "ERROR - result is empty, you might have entered a wrong password"
 		fi
 	else
-		cd $filepath
-		if [ -z "$filename" ]
-		then
-			echo "do_work: filename is not defined, directory based"
-			shopt -s nullglob
-			for f in *; do		
-				do_work_on_a_file $f
-			done
-		else
-			echo "do_work: filename is defined, specific file based"
-			f=$filename
+		for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+			results=`echo "${results}" | ${BASE64} | $TR "${password_processed}" "${password_reversed}"`
+		done
+		results="${salt_num_repeat}${salt_shuffle_idx}${encrypt_decrypt_rounds}${SALT_SEPARATOR}${results}"
+	fi		
+	if [ "${is_show_b64_charset}" = true ] ; then
+		echo "password_processed: [$password_processed]"
+		echo "password_reversed:  [$password_reversed]"
+	fi
+	if [ "${is_copy_to_clipboard}" = true ] ; then
+		echo "$results" | ${PBCOPY}
+		echo ""
+		echo "The decrypted text is already copied to clipboard"
+		echo ""
+	else
+		echo "$results"
+	fi
+}
+
+function do_work_on_filepath {
+	ask_password
+	cd $filepath
+	if [ -z "$filename" ]
+	then
+		echo "do_work: filename is not defined, directory based"
+		shopt -s nullglob
+		for f in *; do		
 			do_work_on_a_file $f
-		fi
+		done
+	else
+		echo "do_work: filename is defined, specific file based"
+		f=$filename
+		do_work_on_a_file $f
 	fi
 }
 
 function do_work_on_a_file {
 	f=$1
+	f_tmp1="${f}.1.tmp"
+	f_tmp2="${f}.2.tmp"
+	f_tmpPH=""
 	if [ "${is_strip_extension}" = true ] ; then
 		g="${f%.*}"
 	else
@@ -359,18 +381,41 @@ function do_work_on_a_file {
 		echo -n > $g
 	fi
 
-	if [ "${is_process_whole_file}" = true ] ; then
-		password_process
-		if [[ "${is_generate_results_in_file}" = false && "${is_encrypt}" = true ]] ; then
-			cat $f | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"
-		elif [[ "${is_generate_results_in_file}" = true && "${is_encrypt}" = true ]] ; then
-			cat $f | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}" > $g
-		elif [[ "${is_generate_results_in_file}" = false && "${is_encrypt}" = false ]] ; then
-			cat $f | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument
-		elif [[ "${is_generate_results_in_file}" = true && "${is_encrypt}" = false ]] ; then
-			cat $f | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument > $g
+	if [ "${mode}" = "${MODE_FILE}" ]
+	then
+		# assume $is_generate_results_in_file is always true here
+		if [[ "${is_encrypt}" = true ]] ; then
+			password_process
+			cat $f > $f_tmp1
+			for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+				cat $f_tmp1 | ${BASE64} | $TR "${password_processed}" "${password_reversed}" > $f_tmp2
+				f_tmpPH=$f_tmp1
+				f_tmp1=$f_tmp2
+				f_tmp2=$f_tmpPH
+			done
+			echo "${salt_num_repeat}${salt_shuffle_idx}${encrypt_decrypt_rounds}${SALT_SEPARATOR}" > $g
+			cat $f_tmp1 >> $g
+		else
+			read -r firstline < $f
+			extract_salt_from_encrypted_text "${firstline}"
+			password_process
+			if [ "${is_multi_encrypt_used}" = true ] ; then
+				tail -n +2 "$f" > "$f_tmp1"
+			else
+				cat $f > $f_tmp1
+			fi
+			for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+				cat $f_tmp1 | $TR "${password_processed}" "${password_reversed}" 2> /dev/null | ${BASE64} --decode 2> /dev/null > $f_tmp2
+				f_tmpPH=$f_tmp1
+				f_tmp1=$f_tmp2
+				f_tmp2=$f_tmpPH
+			done
+			cat $f_tmp1 > $g
 		fi	
+		rm -rf $f_tmp1 
+		rm -rf $f_tmp2
 	else
+		# $mode must be MODE_TAG here
 		echo "-----RESULTS START-----"
 		while IFS= read -r line || [ -n "$line" ];
 		do
@@ -398,16 +443,21 @@ function do_work_on_a_file {
 							extract_salt_from_encrypted_text "${matched_text}"
 							if [ "${is_salt_used}" = true ] ; then
 								matched_text=${matched_text:${SALT_LENGTH}}
+							elif [ "${is_multi_encrypt_used}" = true ] ; then
+								matched_text=${matched_text:${MULTI_ENCRYPT_LENGTH}}
 							fi
 						fi
 						password_process
+						results="${matched_text}"
 						if [ "${is_encrypt}" = true ] ; then
-							results=`echo "${matched_text}" | $command_base64_with_argument | $TR "${password_processed}" "${password_reversed}"`
-							results="${salt_num_repeat}${salt_shuffle_idx}${SALT_SEPARATOR}${results}"
-							#echo "results:[${results}]"
+							for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+								results=`echo "${results}" | ${BASE64} | $TR "${password_processed}" "${password_reversed}"`
+							done
+							results="${salt_num_repeat}${salt_shuffle_idx}${encrypt_decrypt_rounds}${SALT_SEPARATOR}${results}"
 						else
-							#echo "do_work_on_a_file: matched_text:[${matched_text}]"
-							results=`echo "${matched_text}" | $TR "${password_processed}" "${password_reversed}" | $command_base64_with_argument`
+							for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+								results=`echo "${results}" | $TR "${password_processed}" "${password_reversed}" 2> /dev/null | ${BASE64} --decode 2> /dev/null`
+							done
 						fi
 						results_with_tags="${tag_key_head}${results}${tag_key_tail}"
 						
@@ -455,7 +505,13 @@ function stringIndexOf {
 
 commands_check
 arguments_check $@
-ask_password
-do_work
+if [ "${mode}" = "${MODE_STDIN}" ]
+then
+	do_work_on_stdin
+else
+	do_work_on_filepath
+fi
+#ask_password
+#do_work
 exit 0
 

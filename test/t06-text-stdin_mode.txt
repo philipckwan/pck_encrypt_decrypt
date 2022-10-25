@@ -1,0 +1,47 @@
+For this test, use the command line, or stdin, mode.
+
+1) Encrypt the text "helloworld", with 4 rounds of encryption, using "elephant" as the password:
+$ ./pck_encrypt_decrypt.sh enci4
+...
+Please type or paste the encrypted text: helloworld
+Please enter the password: (type in "elephant")
+Please re-enter the password: (type in "elephant" again)
+634-f7oeenoD+ueWQK0thnA/la+Fns0eOIJ6/teEllX7fwywpp90sM==
+
+Running this again with the same text, rounds and password will yield different results:
+184-U/2YXOUU5p+T4PYYUuG84OU0oUyBWO+TTy2XBOYu3PqiopPGns==
+144-iHycTNGTiMI8N0IFOFI0QHCTQEQqg8IOiFN9OHCoWEfGJdHy5b==
+
+2) Decrypt the encrypted texts above, using "elephant" as the password:
+$ ./pck_encrypt_decrypt.sh deci
+...
+Please type or paste the encrypted text: 634-f7oeenoD+ueWQK0thnA/la+Fns0eOIJ6/teEllX7fwywpp90sM==
+Please enter the password: (type in "elephant")
+helloworld
+$ ./pck_encrypt_decrypt.sh deci
+...
+Please type or paste the encrypted text: 184-U/2YXOUU5p+T4PYYUuG84OU0oUyBWO+TTy2XBOYu3PqiopPGns==
+Please enter the password: (type in "elephant")
+helloworld
+$ ./pck_encrypt_decrypt.sh deci
+...
+Please type or paste the encrypted text: 144-iHycTNGTiMI8N0IFOFI0QHCTQEQqg8IOiFN9OHCoWEfGJdHy5b==
+Please enter the password: (type in "elephant")
+helloworld
+
+
+
+3) Encrypt the same text with the same password, but with the maximum 9 rounds of encryption:
+$ ./pck_encrypt_decrypt.sh enci9
+...
+Please type or paste the encrypted text: helloworld
+Please enter the password: (type in "elephant")
+Please re-enter the password: (type in "elephant" again)
+469-YTfi7A94kiOFqBye7iog746TdzDSXq5odB5icivo3rZSyq55veKfwrjHZzvpo8zFrA4d7bqo7S6PY8zwdzDmdeDHdTSeym4DdK9OvedIvmyejRdUZiDJdRZo74vikTvTdKLpmit4vzzic45RdASgY8D2kidcYTZCY8DPdBZHvbzQoT5srozVoq5EYr4cXrjVueziq46Q7T1FcS64rqDmd8d8786VvJjjrSzSqg6NwrcFyRjP3B4qxyU=
+
+4) Decrypt the encrypted text:
+$ ./pck_encrypt_decrypt.sh deci
+...
+Please type or paste the encrypted text: 469-YTfi7A94kiOFqBye7iog746TdzDSXq5odB5icivo3rZSyq55veKfwrjHZzvpo8zFrA4d7bqo7S6PY8zwdzDmdeDHdTSeym4DdK9OvedIvmyejRdUZiDJdRZo74vikTvTdKLpmit4vzzic45RdASgY8D2kidcYTZCY8DPdBZHvbzQoT5srozVoq5EYr4cXrjVueziq46Q7T1FcS64rqDmd8d8786VvJjjrSzSqg6NwrcFyRjP3B4qxyU=
+Please enter the password: (type in "elephant")
+helloworld

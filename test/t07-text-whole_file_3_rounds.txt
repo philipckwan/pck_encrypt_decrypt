@@ -1,0 +1,29 @@
+For this test, this whole file is encrypted with 3 rounds of encryption and password "piyOUT098"
+$ ./pck_encrypt_decrypt.sh test/t07-text-whole_file_3_rounds.txt encf3
+...
+Please enter the password: (type in "piyOUT098")
+Please re-enter the password: (type in "piyOUT098" again)
+...
+do_work_on_a_file: will generate a file from: [t07-text-whole_file_3_rounds.txt] to:[t07-text-whole_file_3_rounds.txt.encf]
+
+To decrypt this file:
+$ ./pck_encrypt_decrypt.sh test/t07-text-whole_file_3_rounds.txt.encf decf
+...
+Please enter the password: (type in "piyOUT098")
+...
+do_work_on_a_file: will generate a file from: [t07-text-whole_file_3_rounds.txt.encf] to:[t07-text-whole_file_3_rounds.txt.encf.decf]
+
+You may then compare the generated file with this file to verify that they are identical.
+
+English:
+
+Rishi Sunak has issued a plea for unity in the face of a "profound economic challenge" after winning the race to be the next prime minister.
+He won the Tory leadership contest after rival Penny Mordaunt failed to secure enough backing from MPs.
+In his first speech, Mr Sunak said bringing his party and the UK together would be his "utmost priority".
+Mr Sunak will become the UK's first British Asian prime minister and the youngest for more than 200 years.
+
+中文:
+
+英國執政保守黨新任黨魁辛偉誠，今日覲見國王查理斯三世後，將會正式成為首相。
+辛偉誠在當選黨魁後表示，國家面臨深刻的經濟挑戰，需要穩定和團結，團結保守黨和國家是他的優先事項。
+
