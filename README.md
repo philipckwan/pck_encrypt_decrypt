@@ -52,7 +52,7 @@ with a passphrase:
 qazWSX468
 ```
 
-I run the tool like this:
+I run the tool like this, using ```encf``` as the option to encrypt and save to a file:
 ```
 $ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt encf enc-01
 ...
@@ -73,9 +73,10 @@ where the section now looks like this:
 ```
 
 The results is the text between the tags \<enc-01> and \</enc-01> are now encrypted.<br/>
+```932-+fEgrQAx7CTP4SAl8CZupS+xXUjfXVycF5==```<br/>
 
 To decrypt the text and show it in the terminal only (i.e. not saving to a new file).<br/>
-I will run the tool like this:
+I will run the tool like this, using ```dec``` as the option:
 ```
 $ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf dec enc-01
 ...
@@ -85,9 +86,10 @@ Please enter the password: (input "qazWSX468" here)
 <enc-01>12345abcde 00000</enc-01>
 -----RESULTS END-----
 ```
-The results is successfully decrypted to the original text.<br/>
+The results is successfully decrypted to the original text, and displayed on the console.<br/>
 
-You may also decrypt the text with the interactive mode.<br/>
+You may also decrypt the text with the interactive mode, with ```deci``` as the option<br/>
+You can copy and pasted the encrypted text when the tool prompts for it:<br/>
 ```
 $ ./pck_encrypt_decrypt.sh deci 
 ...
@@ -97,7 +99,7 @@ Please enter the password: (input "qazWSX468" here)
 
 ```
 
-There are more examples of usage located in the "test" folder.<br/>
+There are more examples of usage located in the ```test``` folder.<br/>
 You may look into them and follow their instructions to try and get more understanding of the capability of this tool.
 
 Command arguments and options
