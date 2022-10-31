@@ -1,19 +1,26 @@
 PCK Encrypt Decrypt
 =
 
-PCK Encrypt Decrypt is encryption and decryption tool.
-It supports both Linux as a shell script, and Windows as a powershell script.
-It can encrypt and decrypt any data files.
-It also has the capability to partially encrypt/decrypt text files.
+PCK Encrypt Decrypt is an encryption and decryption tool.<br/>
+It supports both Linux as a shell script, and Windows as a powershell script.<br/>
+It can encrypt and decrypt any data files.<br/>
+It can also encrypt and decrypt part of a text file.<br/>
+That means, you can have a text file where only certain parts of it are encrypted.<br/>
 
 Features
 -
 
 This tool:
-* can encrypt and decrypt a whole binary file, in any format. The results is Base64 text, in other words, the character sets of Base64
-* can encrypt and decrypt a segment of a plaintext file. The key is to enclose such text in xml like element as an identifier
-* the results of the encryption and decryption can be outputted in the terminal, thus only in memory. Or it can be outputted into a file, which means it will be persisted into the filesystem.
-* The encryption and decryption technology is based on base64 encoding and followed by a text shuffling, based on a passphrase setup by the user upon encryption
+* can encrypt and decrypt data in 3 methods:<br/>
+(1) as a whole file<br/>
+(2) given a plaintext file, only encrypt a segment of it.<br/>
+(3) interactive mode, where you are prompted for the text to be encrypted or decrypted.<br/>
+* the results of the encryption and decryption can be outputted in 3 ways:<br/>
+(1) as a file, which means it will be saved on the computer.<br/>
+(2) display on the terminal, which means it only stays in the computer memory and not being saved as a file.<br/>
+(3) copy to the clipboard (i.e. like using Ctrl-C to copy and paste), which means not only it stays in the computer memory, but it also won't be shown on the terminal.
+* have user provides a passphrase when performing the encryption. User will need to provide the same passphrase when performing the decryption.
+* allows the encryption strength to be set between 1 (lowest) to 9 (highest). The higher the encryption strength, the more difficult it is to decrypt by brute force guessing the passphrase.
 
 Command Arguments
 -
@@ -21,12 +28,16 @@ Command Arguments
 Note: To run this tool in Windows, execute the Windows version of the script in a powershell terminal:<br/>
 ```win_pck_encrypt_decrypt.ps1```<br/>
 The rest of the command line syntax is the same as the Linux shell version.<br/>
+
+Filepath mode
+--
 ```
 pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag keys>]
 win_pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag keys>]
 ```
 * filepath: relative path and filename, pointing to the file
-* encrypt option: enc | dec | encf | decf <br/>
+* encrypt option: The encryption and decryption option is one of the following:<br/>
+enc | dec | encf | decf <br/>
 enc - encrypt in memory, showing the results in console <br/>
 dec - decrypt in memory, showing the results in console <br/>
 encf - encrypt and output to file <br/>
