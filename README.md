@@ -85,8 +85,17 @@ Please enter the password: (input "qazWSX468" here)
 <enc-01>12345abcde 00000</enc-01>
 -----RESULTS END-----
 ```
-
 The results is successfully decrypted to the original text.<br/>
+
+You may also decrypt the text with the interactive mode.<br/>
+```
+$ ./pck_encrypt_decrypt.sh deci 
+...
+Please type or paste the encrypted text: 932-+fEgrQAx7CTP4SAl8CZupS+xXUjfXVycF5==
+Please enter the password: (input "qazWSX468" here)
+12345abcde 00000
+
+```
 
 There are more examples of usage located in the "test" folder.<br/>
 You may look into them and follow their instructions to try and get more understanding of the capability of this tool.
@@ -98,6 +107,8 @@ There are 2 ways to run this tool:<br/>
 (1) filepath based<br/>
 (2) interactive based<br/>
 
+Filepath based
+-
 This is the filepath based syntax:
 ```
 pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag keys>]
@@ -106,23 +117,46 @@ win_pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag keys>]
 * filepath: relative path and filename, pointing to the file to be encrypt/decrypt.<br/>
 If the filepath is a directory, it will process all the files under this directory<br/>
 * encrypt option: The encryption and decryption option is one of the following:<br/>
-enc - encrypt in memory, displaying the results in console <br/>
-dec - decrypt in memory, displaying the results in console <br/>
-encf - encrypt and output the results to a new file <br/>
-decf - decrypt and output the results to a new file <br/>
+```enc``` - encrypt in memory, displaying the results in console <br/>
+```dec``` - decrypt in memory, displaying the results in console <br/>
+```encf``` - encrypt and output the results to a new file <br/>
+```decf``` - decrypt and output the results to a new file <br/>
 * tag keys: < and > will be added to enclose tag key; i.e. pck-01 becomes \<pck-01> and \</pck-01> <br/>
 It is expected the tag is enlosed like xml tags, i.e. \<pck-01> and \</pck-01> enclosed the inline text to be encrypted <br/>
 If \<tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted <br/>
 tag keys can be a comma separated list, i.e. pck-01,pck-02,pck-04 will results in handling three tags \<pck-01>, \<pck-02> and \<pck-04>
+* encryption option with the encryption strength<br/>
+For encryption, the encryption strength can be optionally added to the end of the encryption option.<br/>
+Given the encrption option:<br/>
+```encf```<br/>
+If you want to encryption with maximum strength of "9", you can specify it as:<br/>
+```encf9```<br/>
+As in this example:<br/>
+```./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt encf9 enc-01```<br/>
+The default encryption strength is currently set at "2".<br/>
+A higher encryption option will make the encrypted text longer, this will cause the text to be less likely to be decrypted by brute force, or keep guessing on the passphrase.
 
+Interactive based
+-
 This is the interactive based syntax:
+
 ```
 pck_encrypt_decrypt.sh <encrypt option>
 ```
 * encrypt option: The encryption and decryption option is one of the following:<br/>
-enci - encrypt by first prompting for the text to be encrypted. The results will be displayed on console.<br/>
-deci - decrypt by first prompting for the text to be decrypted. The results will be displayed on console.<br/>
-decic - decrypt by first prompting for the text to be decrypted. The results will be copied to clipboard.<br/>
+```enci``` - encrypt by first prompting for the text to be encrypted. The results will be displayed on console.<br/>
+```deci``` - decrypt by first prompting for the text to be decrypted. The results will be displayed on console.<br/>
+```decic``` - decrypt by first prompting for the text to be decrypted. The results will be copied to clipboard.<br/>
+The encryption strength option is also supported in these interactive modes.
+For example, you may run the tool to encrypt a text with strength of "5" like this:<br/>
+```
+$ ./pck_encrypt_decrypt.sh enci5
+...
+Please type or paste the encrypted text: hello
+Please enter the password: (input a passphrase here)
+Please re-enter the password: (input the same passphrase here)
+555-WlCyjkZThifTk2Ofaa2MZMAxreOcYif3YaT2ZS3=
+```
 
 Cryptography analysis and rational of this tool
 -
@@ -163,4 +197,4 @@ In other words, the longer it is, the less repeating character it contains, the 
 
 Change Log
 -
-Please refer to CHANGELOG for more details on the update and fix histories of this tool.
+Please refer to CHANGELOG for more details on the update and fix history of this tool.
