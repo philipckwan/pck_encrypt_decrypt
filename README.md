@@ -29,86 +29,100 @@ Note: To run this tool in Windows, execute the Windows version of the script in 
 ```win_pck_encrypt_decrypt.ps1```<br/>
 The rest of the command line syntax is the same as the Linux shell version.<br/>
 
-Filepath mode
---
+Key Example
+-
+To showcase one of the major feature of this tool, here is the example of encrypting and decrypting a segment of a plaintext file.<br/>
+Originally, I have a plaintext file:
+```
+test/t01-text-tag_key_within_line.txt
+```
+Its content contains a section like this:
+```
+#1 - full line with tag key, results should be: 
+<xxxxxx>12345abcde 00000</xxxxxx>
+<enc-01>12345abcde 00000</enc-01>
+```
+
+I want to encrypt the text that is enclosed between the tags \<enc-01> and \</enc-01>:
+```
+12345abcde 00000
+```
+with a passphrase:
+```
+qazWSX468
+```
+
+I run the tool like this:
+```
+$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt encf enc-01
+...
+Please enter the password: (input "qazWSX468" here)
+Please re-enter the password: (input "qazWSX468" here again)
+...
+```
+
+After the tools is ran, I got a new file:
+```
+test/t01-text-tag_key_within_line.txt.encf
+```
+where the section now looks like this:
+```
+#1 - full line with tag key, results should be: 
+<xxxxxx>12345abcde 00000</xxxxxx>
+<enc-01>932-+fEgrQAx7CTP4SAl8CZupS+xXUjfXVycF5==</enc-01>
+```
+
+The results is the text between the tags \<enc-01> and \</enc-01> are now encrypted.<br/>
+
+To decrypt the text and show it in the terminal only (i.e. not saving to a new file).<br/>
+I will run the tool like this:
+```
+$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf dec enc-01
+...
+Please enter the password: (input "qazWSX468" here)
+...
+-----RESULTS START-----
+<enc-01>12345abcde 00000</enc-01>
+-----RESULTS END-----
+```
+
+The results is successfully decrypted to the original text.<br/>
+
+There are more examples of usage located in the "test" folder.<br/>
+You may look into them and follow their instructions to try and get more understanding of the capability of this tool.
+
+Command arguments and options
+-
+
+There are 2 ways to run this tool:<br/>
+(1) filepath based<br/>
+(2) interactive based<br/>
+
+This is the filepath based syntax:
 ```
 pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag keys>]
 win_pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag keys>]
 ```
-* filepath: relative path and filename, pointing to the file
+* filepath: relative path and filename, pointing to the file to be encrypt/decrypt.<br/>
+If the filepath is a directory, it will process all the files under this directory<br/>
 * encrypt option: The encryption and decryption option is one of the following:<br/>
-enc | dec | encf | decf <br/>
-enc - encrypt in memory, showing the results in console <br/>
-dec - decrypt in memory, showing the results in console <br/>
-encf - encrypt and output to file <br/>
-decf - decrypt and output to file <br/>
+enc - encrypt in memory, displaying the results in console <br/>
+dec - decrypt in memory, displaying the results in console <br/>
+encf - encrypt and output the results to a new file <br/>
+decf - decrypt and output the results to a new file <br/>
 * tag keys: < and > will be added to enclose tag key; i.e. pck-01 becomes \<pck-01> and \</pck-01> <br/>
 It is expected the tag is enlosed like xml tags, i.e. \<pck-01> and \</pck-01> enclosed the inline text to be encrypted <br/>
 If \<tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted <br/>
 tag keys can be a comma separated list, i.e. pck-01,pck-02,pck-04 will results in handling three tags \<pck-01>, \<pck-02> and \<pck-04>
-* password will then be asked during the process of the script execution. <br/>
 
-Examples
--
-
-Example 1 - encrypt a whole binary file
-
-This command encrypts the whole image file in the test directory:<br/>
-```$ ./pck_encrypt_decrypt.sh test/apple_on_a_tree.jpg encf ```
-
-The output is saved as a new file apple_on_a_tree.jpg.encf in the same folder.<br/>
-I entered `appletree` as the password, which can then be used to decrypt the file
-
-I can then decrypt the file and save it in the same folder:<br/>
-```$ ./pck_encrypt_decrypt.sh test/apple_on_a_tree.jpg.encf decf```
-
-Example 2 - encrypt tags within a text file, then decrypt and save the file to filesystem
-
-Decrypt all tags (enc-01, enc-02) in this file:<br/>
-test/t01-text-tag_key_within_line.txt.encf<br/>
-with password:<br/>
-qazWSX468<br/>
-
-i.e. 
-```$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf decf enc-01,enc-02```
-
-The resulting file will be generated at:<br/>
-test/t01-text-tag_key_within_line.txt.encf.decf
-
-Example 3 - encrypt tags within a text file, then decrypt the encrypted sections and display in console
-
-Using the same password as the previous example, but use the argument "dec" instead of "decf"
-
-i.e. 
-```$ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf dec enc-01,enc-02```
-
-The console displays these lines:<br/>
+This is the interactive based syntax:
 ```
-RESULTS: [<enc-01>12345abcde 00000</enc-01>]
-RESULTS: [<enc-01> </enc-01>]
-RESULTS: [<enc-01>ironman batman ~!@#$%^&*()_+,./<>?;':"[]\{}|</enc-01>]
-RESULTS: [<enc-01>qwerty uiop[]</enc-01>]
-RESULTS: [<enc-02>qwerty uiop[]</enc-02>]
+pck_encrypt_decrypt.sh <encrypt option>
 ```
-
-Example 4 - encrypting the same text results in different output because of salt
-
-In this file:<br/>
-test/t02-text-multiple_tags.txt.encf<br/>
-several encrypted text are identical (i.e. they are "helloworld" or "ok").<br/>
-But the resulting encrypted tags are different, because salt is being applied to the encryption process.<br/>
-When salt is applied, the encrypted tag contect will contains a prefix of "xx-" where xx are 2 numbers.<br/>
-These 2 numbers are salt used to generated different output when encrypting.<br/>
-But when decrypting, given the salt is provided and the same password is used, it will be able to recover back to the original text.<br/>
-See <https://en.wikipedia.org/wiki/Salt_(cryptography)><br/>
-
-Decrypt all tags (enc-01, enc-02, enc-03, enc-04, wallet) in this file:<br/>
-test/t02-text-multiple_tags.txt.encf<br/>
-with password:<br/>
-quickBROWNfox<br/>
-
-i.e. 
-```$ ./pck_encrypt_decrypt.sh test/t02-text-multiple_tags.txt.encf decf enc-01,enc-02,enc-03,enc-04,wallet```
+* encrypt option: The encryption and decryption option is one of the following:<br/>
+enci - encrypt by first prompting for the text to be encrypted. The results will be displayed on console.<br/>
+deci - decrypt by first prompting for the text to be decrypted. The results will be displayed on console.<br/>
+decic - decrypt by first prompting for the text to be decrypted. The results will be copied to clipboard.<br/>
 
 Cryptography analysis and rational of this tool
 -
@@ -147,12 +161,6 @@ and it will be used along with the linux command `tr` to replace the Base64 enco
 The entropy of such shuffling, should be depended on the length of the user input password.<br/>
 In other words, the longer it is, the less repeating character it contains, the more unique character it contains, will result in a more deviated sequence than the original base64 character set, which should therefore results in a more secure shuffled contents than the original Base64 encoded contents.
 
-Change logs
+Change Log
 -
-
-Refer to the script pck_encrypt_decrypt.sh for more details. <br/>
-Update v1.6 (28-4-2022):
-* fix an issue with handling windows/dos type of text file
-
-Update v1.7 (16-9-2022):
-* supports windows powershell (.ps1) version
+Please refer to CHANGELOG for more details on the update and fix histories of this tool.
