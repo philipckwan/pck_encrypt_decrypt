@@ -12,6 +12,15 @@ Running this again with the same text, rounds and password will yield different 
 184-U/2YXOUU5p+T4PYYUuG84OU0oUyBWO+TTy2XBOYu3PqiopPGns==
 144-iHycTNGTiMI8N0IFOFI0QHCTQEQqg8IOiFN9OHCoWEfGJdHy5b==
 
+Running this with the same text, rounds and password from windows script:
+>  .\win_pck_encrypt_decrypt.ps1 enci
+...
+Please type or paste the encrypted text: : helloworld
+Please enter the password: (type in "elephant")
+Please re-enter the password: (type in "elephant" again)
+314-OFG6gFsVOC08P649MDsMgF98NC4QiYo1MKkpMF97Org=
+534-PkKe4kKmK1VBhg2P4krCn3MQ/0pwP6ch/+GZ+3Mkl29=
+
 2) Decrypt the encrypted texts above, using "elephant" as the password:
 $ ./pck_encrypt_decrypt.sh deci
 ...
