@@ -6,12 +6,10 @@ DONE-add an option when decrypting and output to file, strip the file extension 
 -feature: filename encrypt
 -feature: header encrypt, i.e. encrypt the first 100 bytes
 DONE(v1.8)-read from stdin; command line option to directly put the string to encrypt/decrypted
--there are still some line break issues, i.e. when decrypt using .ps1 with a file encrypted by .sh
+DONE(win v0.4)-there are still some line break issues, i.e. when decrypt using .ps1 with a file encrypted by .sh
 -for decrypt, if tag not found, got error "Invalid character in input stream.", should make it more user friendly such as "tag not found"
-DONE(v1.8)-enhance to use pbcopy; for the read from stdin option, add an option to use pbcopy to copy to clipboard (i.e. like using ctrl-c)
-DONE(v1.9)-put in password length and character limit check
-DONE(v1.10)-further deviate the encryption by multiple encryption, prevent close enough password to be able to decrypt the encrypted text
 -enhance to handle multiple lines of encryption tags, instead of just 1 line
+DONE(win v0.4)-port the latest features from .sh to .ps1
 
 some commands that are useful:
 
@@ -19,7 +17,7 @@ some commands that are useful:
 Get-FileHash <filepath> -Algorithm MD5
 
 -to compare two files on windows powershell:
-diff (cat <file1) (cat <file2>)
+diff (cat <file1>) (cat <file2>)
 
 ----------------------------------------------------
 DONE:
@@ -31,3 +29,6 @@ DONE-investigate the equivalent in Windows environment. For example, find the co
 DONE-consider to combine and encrypt/decode multiple tags in one go
 DONE-add salt to the tag mode encryption so that the same text will be enrypted to different results
 DONE(v1.7)-for .sh; use something like line.substring() to search for tag_key_head and tag_key_tail, so that the encrypted tag can be inside the line, any drawback?
+DONE(v1.8)-enhance to use pbcopy; for the read from stdin option, add an option to use pbcopy to copy to clipboard (i.e. like using ctrl-c)
+DONE(v1.9)-put in password length and character limit check
+DONE(v1.10)-further deviate the encryption by multiple encryption, prevent close enough password to be able to decrypt the encrypted text
