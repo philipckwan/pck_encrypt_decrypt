@@ -36,7 +36,6 @@ $global:password_from_stdin=""
 $global:password_processed=""
 $global:password_reversed=""
 $global:password_hash=New-Object system.collections.hashtable
-$result_filename_suffix=""
 #$global:is_process_whole_file=$false;
 $global:is_generate_results_in_file=$false;
 $global:is_encrypt=$false;
@@ -336,7 +335,6 @@ function do_work_on_filepath {
 }
 
 function do_work_on_a_file($f) {
-    write-host "__f:$($f);f.getType().name:$($f.gettype().name);"
     $f_tmp1="$($f).1.tmp"
     $f_tmp2="$($f).2.tmp"
     $f_tmpPH=""
@@ -408,10 +406,12 @@ function do_work_on_a_file($f) {
         Remove-Item -Path $fB64
     } else {
         # $mode must be MODE_TAG here
-        write-host "-----RESULTS START-----"
+        if ($is_generate_results_in_file -eq $false) {
+            write-host "-----RESULTS START-----"
+        }
         [System.IO.File]::ReadLines($f) | ForEach-Object {
             $tag_found=$false
-            for($i=0; $i -lt $tag_keys.Length; $i++) {
+            for($i=0; $i -lt $tag_keys.count; $i++) {
                 $tag_key_head = "<$($tag_keys[$i])>"
                 $tag_key_tail = "</$($tag_keys[$i])>"
                 $tag_key_head_matched_idx = $_.indexof($tag_key_head);
@@ -435,7 +435,7 @@ function do_work_on_a_file($f) {
                         password_process
                         $results=$matched_text
                         if ($is_encrypt -eq $true) {
-                            for ($i = 0; $i -lt $encrypt_decrypt_rounds; $i++) {
+                            for ($k = 0; $k -lt $encrypt_decrypt_rounds; $k++) {
                                 $matched_text_bytes = [System.Text.Encoding]::ASCII.GetBytes($results)
                                 $matched_text_b64=[Convert]::ToBase64String($matched_text_bytes);
                                 $b64EncSB = [System.Text.StringBuilder]::new()
@@ -448,7 +448,7 @@ function do_work_on_a_file($f) {
                             $results = "$salt_num_repeat" + "$salt_shuffle_idx" + "$encrypt_decrypt_rounds" + $SALT_SEPARATOR + $results
                             #write-host "__results:[$results]"
                         } else {
-                            for ($i = 0; $i -lt $encrypt_decrypt_rounds; $i++) {
+                            for ($k = 0; $k -lt $encrypt_decrypt_rounds; $k++) {
                                 #write-host "__results:$($results);"
                                 $b64DecSB = [System.Text.StringBuilder]::new()
                                 for ($j = 0; $j -lt $results.length; $j++) {
@@ -494,6 +494,7 @@ function stripLastLineFeedCharacter($string) {
     $lastChar = $lastCharArray[$lastCharArray.length - 1];
     $lastCharToInt = [System.Convert]::ToUInt32($lastChar);
     if ($lastCharToInt -eq 10) {
+        #write-host "stripLastLineFeedCharacter: lastCharToInt is 10, will strip"
         return $string.substring(0, $string.length - 1);
     }
     return $string;

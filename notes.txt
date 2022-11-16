@@ -10,6 +10,7 @@ DONE(win v0.4)-there are still some line break issues, i.e. when decrypt using .
 -for decrypt, if tag not found, got error "Invalid character in input stream.", should make it more user friendly such as "tag not found"
 -enhance to handle multiple lines of encryption tags, instead of just 1 line
 DONE(win v0.4)-port the latest features from .sh to .ps1
+-BUG for win version, chinese characters seem cannot be encrypted/decrypted with tags 
 
 some commands that are useful:
 
