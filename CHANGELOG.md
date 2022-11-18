@@ -26,3 +26,6 @@ For win_pck_encrypt_decrypt.ps1 (Windows powershell script):
 
 -v0.3
 Initial version
+
+-v0.4
+port enhancements from linux script v1.10
