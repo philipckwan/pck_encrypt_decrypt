@@ -29,3 +29,6 @@ Initial version
 
 -v0.4
 port enhancements from linux script v1.10
+
+-v1.0
+pdate the version to v1.0, plus minor fix

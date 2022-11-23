@@ -59,7 +59,7 @@ $password_valid_charset="9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjih
 
 function print_usage_and_exit {
     write-host ""
-    write-host "win_pck_encrypt_decrypt.ps1: v0.4"
+    write-host "win_pck_encrypt_decrypt.ps1: v1.0"
     write-host ""
     write-host "Usage: win_pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag key>]"
 	write-host "-filepath: relative path and filename"
@@ -468,7 +468,7 @@ function do_work_on_a_file($f) {
                         if ($is_generate_results_in_file -eq $true) {
                             "$text_before_matched$results_with_tags$text_after_matched" >> $g
                         } else {
-                            write-host "RESULTS: [$results_with_tags]"
+                            write-host "$text_before_matched$results_with_tags$text_after_matched"
                         }
                     }
                 }
