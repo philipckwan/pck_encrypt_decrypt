@@ -1,0 +1,16 @@
+For this test, after v1.11, a password that has duplicate characters will cause the output to be different.
+This should add one more level of security of the encryption and decryption.
+
+given this text:
+<xxx>abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()-_=+[{]}\|;:'",<.>/?</xxx>
+
+Using this password to encrypt:
+appletree
+
+It will yield a different result if decrypt using:
+apletr
+
+The encrypted text:
+<en1>8631-429cGmR3rJz7/f7n9A5cpk8UrtLh2cLMa3IZ4Ji3/cOD+ALJGdPZGf5BHy7Ot7MD96IZ//tVrAiO2cMt43IXGWt3a2p6N6CVNwab2+V0a6YUtWZAFw46NWPmtynlFcZUeXFsFX9m2LIq5JIXFcV6hwLmHJMhKtn2Nc5fNkOihtG7p6QDFfdOt2dpGy6m5wtAh/pZFXom/7rUGz7ChbIZhrOy5wtbpz5yemQW58I=</en1>
+
+

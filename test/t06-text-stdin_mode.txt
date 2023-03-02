@@ -54,3 +54,8 @@ $ ./pck_encrypt_decrypt.sh deci
 Please type or paste the encrypted text: 469-YTfi7A94kiOFqBye7iog746TdzDSXq5odB5icivo3rZSyq55veKfwrjHZzvpo8zFrA4d7bqo7S6PY8zwdzDmdeDHdTSeym4DdK9OvedIvmyejRdUZiDJdRZo74vikTvTdKLpmit4vzzic45RdASgY8D2kidcYTZCY8DPdBZHvbzQoT5srozVoq5EYr4cXrjVueziq46Q7T1FcS64rqDmd8d8786VvJjjrSzSqg6NwrcFyRjP3B4qxyU=
 Please enter the password: (type in "elephant")
 helloworld
+
+
+5) More test cases:
+This case uses almost all the characters found on a keyboard:
+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()-_=+[{]}\|;:'",<.>/?

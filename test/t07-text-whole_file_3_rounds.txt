@@ -1,15 +1,16 @@
-For this test, this whole file is encrypted with 3 rounds of encryption and password "piyOUT098"
+For this test, this whole file is encrypted with 3 rounds of encryption and password:
+piyOUT098pO
 $ ./pck_encrypt_decrypt.sh test/t07-text-whole_file_3_rounds.txt encf3
 ...
-Please enter the password: (type in "piyOUT098")
-Please re-enter the password: (type in "piyOUT098" again)
+Please enter the password: (type in the password from above)
+Please re-enter the password: (type in the password from above)
 ...
 do_work_on_a_file: will generate a file from: [t07-text-whole_file_3_rounds.txt] to:[t07-text-whole_file_3_rounds.txt.encf]
 
 To decrypt this file:
 $ ./pck_encrypt_decrypt.sh test/t07-text-whole_file_3_rounds.txt.encf decf
 ...
-Please enter the password: (type in "piyOUT098")
+Please enter the password: (type in the password from above)
 ...
 do_work_on_a_file: will generate a file from: [t07-text-whole_file_3_rounds.txt.encf] to:[t07-text-whole_file_3_rounds.txt.encf.decf]
 

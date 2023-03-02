@@ -3,7 +3,7 @@ t01-text-tag_key_within_line
 Decrypt all tags (enc-01, enc-02) in this file:
 test/t01-text-tag_key_within_line.txt.encf
 with password:
-qazWSX468
+qazWSX468q
 
 i.e. 
 $ ./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt.encf decf enc-01,enc-02
@@ -13,20 +13,20 @@ test/t01-text-tag_key_within_line.txt.encf.decf
 
 #1 - full line with tag key, results should be: 
 <xxxxxx>12345abcde 00000</xxxxxx>
-<enc-01>995-4TW784Y+S9F+hPv4ZdgXHwcbN+1OGvATS5KxatJBWP68X48P6+9Th7bBN9Kea4NW49rX84GZR9yUaTgRQcgtkb8BHXcV65b1sJ==</enc-01>
+<enc-01>8821-Bfmpy/ItfgIiutM/vyziftMtW/0Qw8xmPX==</enc-01>
 
 #2 - full line with tag key, results should be an empty space:
 <xxxxxx> </xxxxxx>
-<enc-01>295-X9J7O445HXvTqvqw4TqbHTqhzX+h</enc-01>
+<enc-01>4121-DlgEKJX=</enc-01>
 
 #3 - tag key within line, results should matched:
 this part is not encrypted<xxxxxx>ironman batman ~!@#$%^&*()_+,./<>?;':"[]\{}|</xxxxxx>this part is not encrypted either
-this part is not encrypted<enc-01>885-wd4ifeE+zf0iuK3YALwtzK3hqtwizNtoA/oQENw/zs+pwOQMWxUsw+zCfgIiftMtzpRtcLw+ywAiWf0HW/odxKxYFN+MyNoVAew0DwzCAywgy9sQagQheeMdygEsudAszrAsFLMDBgQizNw3wtUdy7uhqtwPaOE5fLAQapw/AewgEt+VugziEp3TBe+gytwBzg40zKMpxguOWgAJPX==</enc-01>this part is not encrypted either
+this part is not encrypted<enc-01>2721-BhscAsAEAq0zBsq09K3LG3qY722gyzqs2V6TAhlo63010v7gIa8nx57WxYdjJalV4Ue5Bhkc1tSgJVQ1fD==</enc-01>this part is not encrypted either
 
 #4 - results should be:
 <xxxxxx>qwerty uiop[]</xxxxxx>
-<enc-01>615-mKXvkdXTjczVl31TJKl/lE/ZssA+lfAbLZMYJGcds2XRR2FMle7LUGFdND7pUG16lEM3HGAPILGU</enc-01>
+<enc-01>6321-4DnuKo1S/i6qq7M5cPLsR9STHX+b</enc-01>
 
 #5 - another tag key, results should be:
 <xxxxxx>qwerty uiop[]</xxxxxx>
-<enc-02>115-aM8IHtA0byCYq+qhDg6jCMW5aOwRAPDZCV2QgNKuCVoPbsqOwh2EDvOtDuOMG4KtwAoXb6yPFBvJ</enc-02>
+<enc-02>7321-jkevTITVVMmqepXnaYc1qdoLcMSh</enc-02>

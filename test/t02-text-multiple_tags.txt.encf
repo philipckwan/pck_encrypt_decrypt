@@ -3,30 +3,30 @@ t02-text-multiple_tags.txt.encf
 Decrypt all tags (enc-01, enc-02, enc-03, enc-04, wallet) in this file:
 test/t02-text-multiple_tags.txt.encf
 with password:
-quickBROWNfox
+quickBROWNfoxkN
 
 i.e. 
 $ ./pck_encrypt_decrypt.sh test/t02-text-multiple_tags.txt.encf decf enc-01,enc-02,enc-03,enc-04,wallet
 
 These should all be decrypted to:"helloworld"
-<enc-01>463-NrdTmjYEwYDbwnQ+4AYW5JNdWJDV5MPqI7==</enc-01>
-<enc-01>983-nv27/kfm5AgZI4pU8Bsq3AQtpYseG6gQcs==</enc-01>
-<enc-01>243-9uR7/k/1FAaZI4NL8BmqtAQhChmlG6aQcm==</enc-01>
-<enc-01>523-C5SKNuiB/8N0G4RS/rJxJu4hA+mpC4uVbv==</enc-01>
-<enc-01>763-tuF6vuopHIzbwq4Y/3h+voFO/g4ZR7oPiG==</enc-01>
+<enc-01>6371-dnsBhMVhuMFZuRp9u5tm5LiSuKLbgK6Ad5tmbBV63HLF0cizuMEDPaw9h53khnrydvWIuDdliBFSVMV2Vadmati9VsLduarWmsFm5L3JTd35u5ryu5ECma2hbc9I3ttOPdsxeg8=</enc-01>
+<enc-01>6171-A3Ef5T+O52Ef7ebY70gA3TRB51YY7TnO7dgsrBfe9XKWAx2S7UndY3g1YeZTrT1d51n4Z3+2mg2X1dn2EU1Y8X1OEUgk1OqH7hfvnWnDYUlT71gB5Vnf71bZw11f7dn83UcK65G=</enc-01>
+<enc-01>7371-vUmLhPxsmexgmwZPXDC0XCZApqlI2dZt6AUtrjz7/P9JhDhb0D95jDZp1AuimefqxUh9pJhL/PAStJUZ0w29tIR8plUflAmxtb9LhqZN+wZdpdZwxU9m1eZ5XTpd9D2r9U7Rnpf=</enc-01>
+<enc-01>2971-hRuBuJilKjm1M1iu6VCm5VSDKl31d5FtlrsJd53Xmm3CM1uB6qi6Ll99L1z6mTiSKlCEhTdk4m31gACvLqimm5CBgcid059D6vCm3qmD6A38KRmpK18IuJ2hlkmChUtO0tsxeg8=</enc-01>
+<enc-01>8471-P125pHjYcosPLE+VcMOWQk3/gMIxh1YDT2QDuDVEQ8sPTk3GPrJeLrp/h3JxrXjPuQjmiQhSh4sVi4RraBpcrQ7wQ1QxcFjMuMJmc3hoPHRRpXRHa4sRpQJ4a33hiK+6g2CsUVm=</enc-01>
 
 This should also be decrypted to:"helloworld"
-<enc-02>913-wF4xoRl+ER80z8w4y1g098g+z3gZf33Tut==</enc-02>
+<enc-02>4271-Fj08vD/YCm9avm2Lsj10vBnBFDSX5YE//jg3H4222j0fFkn0/ur7H7fzIn3a9j6bG46uCHQ0I6fkH75GFDf/F6/LFjgZ/4fn/j0bHl2eFHruwk6XFj0f/l309jrWIjFF3YiQ+9K=</enc-02>
 
 This should be decrypted to:"ok"
-<enc-03>713-pjjap6aY65Z/</enc-03>
+<enc-03>5871-7m38QQ7F3c/5fUz7tuiUf5hSw2rOv3uCvSzhy97KsCVOvEdQD8/fNWL=</enc-03>
 
 This should also be decrypted to:"ok"
-<enc-04>323-mUjH4N7VABX9</enc-04>
+<enc-04>3171-UTUUgMULSpkuepEqgmOoviU1ePOShvUwUUQBSM8NUVFAt78h1VIH0Zz=</enc-04>
 
 This should also be decrypted to:"ok"
-<enc-03>523-C39MJbVQ+/5O</enc-03>
+<enc-03>1871-FaRGC72t/6lXIwtyIY5cncQ0/a3j/6ww9Zh1mk/ZpuEjp6I/naLx+9K=</enc-03>
 
 My 12 recovery phrases (this is fake of course), encrypt and decrypt with tag key 'wallet':
 <xxxxxx>happy sad eye ear mouth nose fish tank breakfast computer apple orange</xxxxxx>
-<wallet>423-C1FFGkIB87FO515h8OVj9msB6ui0w6V3FDr3s6nc5jfu/4fOx0sfo1I4F5nZwnNbxZ0q6l2d/uBXIj5WI7BqC4Iv21Fkv1nD/jg3s7r+I4Das62jxu2HourN6nnf9m2A9uR7/B/Z5AdZvj2hIuR/tmsB662kI1nGIHgAC6CZ2RRmCk1Qcp==</wallet>
+<wallet>8971-X34xpBUd41rmIRyxpmrl4c8jEwnj+3rN+RyDqw7gEFrjoBOhEiF040WAEFnPIc7/X0bCoKOZn3WkHzY/X0yYpFtZ5FnXI8vwni60/1TXnmHW+0yep3505NGB43nh/z7aH9nDq1Tu7cWComHdp2WYnc70H2Wh8zTqERb1qBZmrBbOIkycEByl49rw71POr2rvHJnN+mHfnz3d52y5IRb8EJYbqmcho7HDX1nYnJTYEFnk8wE0EKrY41YA+kGW+2rD+zyRpugg+kvXX1rg+8b8EJ5js8TOo0y2Ec4hoRGun17O+0WZnBFZ8c7An0bh/FTq+zyComvuJwGm+N4KIRrOHugw5FnO/ybapNyD70cjsJcd53t0EcM2qNoZfmnWqKWRpzyC+0k+pyyzo8vdEcgYX0GB5wt39zY5pwGDqcFZ7uU3r3rdp0774i/jIinhI7rfH9vN+0OZ5zWjHFv5Xmk4ocFZ9Jvho77/nikw4i8mrkbOIK/jp2WR41Y0pzvCoRyw+irKpuUm5zWmIBomp1yl587bEzPm8w4g+wvyoNnYn175oKyfEkWwJKG0rzjdpk/ZE078pNth993X</wallet>

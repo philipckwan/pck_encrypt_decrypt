@@ -50,22 +50,36 @@ is_copy_to_clipboard=false
 tag_keys=()
 encrypted_from_stdin=""
 
+# used by do_work_one_line, decrypt_one_line, encrypt_one_line
+input_one_line=""
+output_one_line=""
+error_one_line=""
+
+# header_version
+# 1 - v1, oldest version, no header
+# 2 - v2, is_salt_used, length == 2, e.g. 23-xxx
+# 3 - v3, is_multi_encrypt_used, length == 3, e.g. 362-xxx
+# 4 - v4, is_text_shuffle_used, length == 4, e.g. 4551-xxx
+header_version=1
 SALT_SEPARATOR="-"
-SALT_LENGTH=3
-is_salt_used=false
+HEADER_V2_LENGTH=3
 salt_num_repeat=0
 salt_shuffle_idx=0
-MULTI_ENCRYPT_LENGTH=4
-is_multi_encrypt_used=false
+HEADER_V3_LENGTH=4
 encrypt_decrypt_rounds=2
+HEADER_V4_LENGTH=5
+text_shuffle_version_supported=1
+text_shuffle_charset_processed=""
+text_shuffle_charset_reversed=""
 matchedIdx=0
 
 base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
 password_valid_charset="9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
+text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.10"
+	echo "pck_encrypt_decrypt.sh v1.11"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -95,7 +109,7 @@ function command_check {
 }
 
 function commands_check {
-    command_check "${BASE64}"
+  command_check "${BASE64}"
 	command_check "${BASENAME}"
 	command_check "${DIRNAME}"
 	command_check "${TR}"
@@ -248,32 +262,91 @@ function ask_password {
 	fi
 }
 
-function extract_salt_from_encrypted_text {
+function extract_header_from_encrypted_text {
 	text=$1
 	if [ "${text:2:1}" == "$SALT_SEPARATOR" ] ; then
-		is_salt_used=true
+		header_version=2
 		salt_num_repeat=${text:0:1}
 		salt_shuffle_idx=${text:1:1}
 		encrypt_decrypt_rounds=1
 	elif [ "${text:3:1}" == "$SALT_SEPARATOR" ] ; then
-		is_multi_encrypt_used=true
+		header_version=3
 		salt_num_repeat=${text:0:1}
 		salt_shuffle_idx=${text:1:1}
 		encrypt_decrypt_rounds=${text:2:1}
+	elif [ "${text:4:1}" == "$SALT_SEPARATOR" ] ; then
+		header_version=4
+		salt_num_repeat=${text:0:1}
+		salt_shuffle_idx=${text:1:1}
+		encrypt_decrypt_rounds=${text:2:1}
+		text_shuffle_version=${text:3:1}
+		if [ "${text_shuffle_version}" -ne "${text_shuffle_version_supported}" ] ; then
+			echo "ERROR - invalid text_shuffle_version [${text_shuffle_version}]";
+			exit 1
+		fi
 	else
+		echo "extract_header_from_encrypted_text: header is not found"
 		encrypt_decrypt_rounds=1
-		#echo "extract_salt_from_encrypted_text: salt is not found"
 	fi
+	#echo "extract_header_from_encrypted_text: header_version: [${header_version}]"
 }
 
 function password_process {
+	# obtain the password_removed_dups, dup_char_array and dup_count_array
+	# dup_char_array and dup_count_array are for text shuffle
+	password_removed_dups=""
+	dup_char_array=()
+	dup_count_array=()
+
+	for (( i=0; i<${#password_from_stdin}; i++ )); do
+    thisChar="${password_from_stdin:$i:1}"
+    if [[ $password_removed_dups != *${thisChar}* ]]
+    then
+      password_removed_dups="${password_removed_dups}${thisChar}"
+    else
+			dup_char_array+=("${thisChar}")
+      dup_count_array+=($i)
+    fi
+  done
+	#echo "password_process: password_removed_dups:[${password_removed_dups}]"
+	#for i in ${!dup_char_array[@]}; do
+  #  echo "__element $i in dup_char_array [${dup_char_array[$i]}]"
+  #  echo "__element $i in dup_count_array [${dup_count_array[$i]}]"
+  #done
+
+	text_shuffle_charset_processed="${text_shuffle_charset}"
+
+  for i in ${!dup_char_array[@]}; do
+    thisLetter="${dup_char_array[$i]}"
+    thisNumber="${dup_count_array[$i]}"
+    #echo "__i:[$i]; charset:[${text_shuffle_charset_processed}]; thisLetter:[${thisLetter}]; thisNumber:[${thisNumber}]"
+    combined_charset="${thisLetter}${text_shuffle_charset_processed}"
+    charset_processed=""
+    for (( j=0; j<${#combined_charset}; j++ )); do
+      thisChar="${combined_charset:$j:1}"
+      if [[ $charset_processed != *${thisChar}* ]]
+      then
+        charset_processed="${charset_processed}${thisChar}"
+      fi
+    done
+    thisNumber_idx_neg=$(($thisNumber*-1))
+    charset_move_to_head=`echo ${charset_processed:$thisNumber_idx_neg}`
+    head_length=$((${#charset_processed}+${thisNumber_idx_neg}))
+    charset_tail=${charset_processed:0:${head_length}}
+    charset_processed="${charset_move_to_head}${charset_tail}"
+    text_shuffle_charset_processed="${charset_processed}"
+  done
+	text_shuffle_charset_reversed=`echo ${text_shuffle_charset_processed} | $REV`
+  #echo "password_process: text_shuffle_charset_processed: [${text_shuffle_charset_processed}]" 
+	#echo "password_process: text_shuffle_charset_reversed:  [$text_shuffle_charset_reversed]"
+
 	# if encrypt and tag based
 	#  generate $salt_num_repeat and $salt_shuffle_idx,then apply to $password_processed and $password_reversed
 	# if decrypt and tag based
 	#  take from $salt_num_repeat and $salt_shuffle_idx, then apply to $password_processed and $password_reversed
 	# if not tag based (i.e. whole file encrypt/decrypt)
 	#  salt is not supported for this type
-	combined_password_base64_charset="${password_from_stdin}${base64_charset}"
+	combined_password_base64_charset="${password_removed_dups}${base64_charset}"
 	password_processed=""
 	for (( i=0; i<${#combined_password_base64_charset}; i++ )); do
 		thisChar="${combined_password_base64_charset:$i:1}"
@@ -304,43 +377,86 @@ function password_process {
 	password_reversed=`echo ${password_processed} | $REV`
 }
 
-function do_work_on_stdin {
-	${READ} -p "Please type or paste the encrypted text: " encrypted_from_stdin
-	ask_password
-	if [ "${is_encrypt}" = false ] ; then
-		extract_salt_from_encrypted_text "${encrypted_from_stdin}"
-		if [ "${is_salt_used}" = true ] ; then
-			encrypted_from_stdin=${encrypted_from_stdin:${SALT_LENGTH}}
-		elif [ "${is_multi_encrypt_used}" = true ] ; then
-			encrypted_from_stdin=${encrypted_from_stdin:${MULTI_ENCRYPT_LENGTH}}
-		fi
+function encrypt_one_line {
+	error_one_line=""
+
+	password_process
+	output_one_line="${input_one_line}"
+	# first, perform the text shuffle
+	#echo "encrypt_one_line: text_shuffle_charset_processed:[$text_shuffle_charset_processed]"
+	#echo "encrypt_one_line: text_shuffle_charset_reversed: [$text_shuffle_charset_reversed]"
+	output_one_line=`echo "${output_one_line}" | $TR "${text_shuffle_charset_processed}" "${text_shuffle_charset_reversed}"`
+
+	for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+		output_one_line=`echo "${output_one_line}" | ${BASE64} | $TR "${password_processed}" "${password_reversed}"`
+	done
+	output_one_line="${salt_num_repeat}${salt_shuffle_idx}${encrypt_decrypt_rounds}${text_shuffle_version_supported}${SALT_SEPARATOR}${output_one_line}"
+}
+
+function decrypt_one_line {
+	extract_header_from_encrypted_text "${input_one_line}"
+	input_one_line_header_stripped=""
+	error_one_line=""
+	if [ ${header_version} -eq 2 ] ; then
+		input_one_line_header_stripped=${input_one_line:${HEADER_V2_LENGTH}}
+	elif [ ${header_version} -eq 3 ] ; then
+		input_one_line_header_stripped=${input_one_line:${HEADER_V3_LENGTH}}
+	elif [ ${header_version} -eq 4 ] ; then
+		input_one_line_header_stripped=${input_one_line:${HEADER_V4_LENGTH}}								
 	fi
-	password_process	
-	results="${encrypted_from_stdin}"
+	#echo "decrypt_one_line: input_one_line_header_stripped:[${input_one_line_header_stripped}]"
+	password_process
+	output_one_line="${input_one_line_header_stripped}"
+	for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
+		output_one_line=`echo "${output_one_line}" | $TR "${password_processed}" "${password_reversed}" 2> /dev/null | ${BASE64} --decode 2> /dev/null`
+	done
+	if [ -z "${output_one_line}" ]  ; then
+		error_one_line="ERROR - result is empty, you might have entered a wrong password"
+	else
+		# apply the text shuffle if header_version == 4
+		if [ ${header_version} -eq 4 ] ; then
+			if [ ${text_shuffle_version_supported} -eq 1 ] ; then
+				#echo "decrypt_one_line: text_shuffle_charset_processed:[$text_shuffle_charset_processed]"
+				#echo "decrypt_one_line: text_shuffle_charset_reversed: [$text_shuffle_charset_reversed]"
+				output_one_line=`echo "${output_one_line}" | $TR "${text_shuffle_charset_processed}" "${text_shuffle_charset_reversed}"`
+			else 
+				echo  "ERROR - invalid text_shuffle_version_supported: [${text_shuffle_version_supported}]"
+				exit 1
+			fi
+		fi 
+	fi
+}
+
+function do_work_on_stdin {
 	if [ "${is_encrypt}" = false ] ; then
-		for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
-			results=`echo "${results}" | $TR "${password_processed}" "${password_reversed}" 2> /dev/null | ${BASE64} --decode 2> /dev/null`
-		done
-		if [ -z "${results}" ]  ; then
-			echo  "ERROR - result is empty, you might have entered a wrong password"
+		${READ} -r -p "Please type or paste the encrypted text: " encrypted_from_stdin
+	else
+		${READ} -r -p "Please type or paste the text to be encrypted: " encrypted_from_stdin
+	fi
+	
+	ask_password
+	input_one_line="${encrypted_from_stdin}"
+	if [ "${is_encrypt}" = false ] ; then
+		decrypt_one_line
+		if [ ! -z "${error_one_line}" ] ; then
+			echo "${error_one_line}"
+			exit 1
 		fi
 	else
-		for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
-			results=`echo "${results}" | ${BASE64} | $TR "${password_processed}" "${password_reversed}"`
-		done
-		results="${salt_num_repeat}${salt_shuffle_idx}${encrypt_decrypt_rounds}${SALT_SEPARATOR}${results}"
-	fi		
+		encrypt_one_line
+	fi
+
 	if [ "${is_show_b64_charset}" = true ] ; then
 		echo "password_processed: [$password_processed]"
 		echo "password_reversed:  [$password_reversed]"
 	fi
 	if [ "${is_copy_to_clipboard}" = true ] ; then
-		echo "$results" | ${PBCOPY}
+		echo "$output_one_line" | ${PBCOPY}
 		echo ""
 		echo "The decrypted text is already copied to clipboard"
 		echo ""
 	else
-		echo "$results"
+		echo "$output_one_line"
 	fi
 }
 
@@ -397,9 +513,9 @@ function do_work_on_a_file {
 			cat $f_tmp1 >> $g
 		else
 			read -r firstline < $f
-			extract_salt_from_encrypted_text "${firstline}"
+			extract_header_from_encrypted_text "${firstline}"
 			password_process
-			if [ "${is_multi_encrypt_used}" = true ] ; then
+			if [ ${header_version} -ge 3 ] ; then
 				tail -n +2 "$f" > "$f_tmp1"
 			else
 				cat $f > $f_tmp1
@@ -439,28 +555,17 @@ function do_work_on_a_file {
 						matched_found=true
 						matched_text=${line:$tag_key_head_matched_idx+${#tag_key_head}:$tag_key_tail_matched_idx-($tag_key_head_matched_idx+${#tag_key_head})}
 
+						input_one_line="${matched_text}"
 						if [ "${is_encrypt}" = false ] ; then
-							extract_salt_from_encrypted_text "${matched_text}"
-							if [ "${is_salt_used}" = true ] ; then
-								matched_text=${matched_text:${SALT_LENGTH}}
-							elif [ "${is_multi_encrypt_used}" = true ] ; then
-								matched_text=${matched_text:${MULTI_ENCRYPT_LENGTH}}
-							fi
-						fi
-						password_process
-						results="${matched_text}"
-						if [ "${is_encrypt}" = true ] ; then
-							for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
-								results=`echo "${results}" | ${BASE64} | $TR "${password_processed}" "${password_reversed}"`
-							done
-							results="${salt_num_repeat}${salt_shuffle_idx}${encrypt_decrypt_rounds}${SALT_SEPARATOR}${results}"
+							decrypt_one_line
+							if [ ! -z "${error_one_line}" ] ; then
+								echo "${error_one_line}"
+							fi							
 						else
-							for (( i=0; i<${encrypt_decrypt_rounds}; i++ )); do
-								results=`echo "${results}" | $TR "${password_processed}" "${password_reversed}" 2> /dev/null | ${BASE64} --decode 2> /dev/null`
-							done
+							encrypt_one_line
 						fi
-						results_with_tags="${tag_key_head}${results}${tag_key_tail}"
-						
+						results_with_tags="${tag_key_head}${output_one_line}${tag_key_tail}"
+
 						if [ "${is_generate_results_in_file}" = true ] ; then
 							echo "$text_before_matched$results_with_tags$text_after_matched" >> $g
 						else
