@@ -3,11 +3,6 @@
 # Author: philipckwan@gmail.com
 #
 
-#$encode_extension="b64e";
-#$decode_extension="b64d";
-
-#$args1=$args[0];
-
 $ARG_KEY_ENCRYPT_IN_MEMORY="enc";
 $ARG_KEY_DECRYPT_IN_MEMORY="dec";
 $ARG_KEY_ENCRYPT_IN_FILE="encf";
@@ -36,7 +31,6 @@ $global:password_from_stdin=""
 $global:password_processed=""
 $global:password_reversed=""
 $global:password_hash=New-Object system.collections.hashtable
-#$global:is_process_whole_file=$false;
 $global:is_generate_results_in_file=$false;
 $global:is_encrypt=$false;
 $global:is_strip_extension=$false
@@ -45,21 +39,36 @@ $global:is_copy_to_clipboard=$false
 $global:tag_keys=@();
 $global:encrypted_from_stdin=""
 
+# used by decrypt_one_line, encrypt_one_line
+$global:input_one_line=""
+$global:output_one_line=""
+$global:error_one_line=""
+
+# header_version
+# 1 - v1, oldest version, no header
+# 2 - v2, is_salt_used, length == 2, e.g. 23-xxx
+# 3 - v3, is_multi_encrypt_used, length == 3, e.g. 362-xxx
+# 4 - v4, is_text_shuffle_used, length == 4, e.g. 4551-xxx
+$global:header_version=1
 $SALT_SEPARATOR="-"
-$SALT_LENGTH=3
-$global:is_salt_used=$false
+$HEADER_V2_LENGTH=3
 $global:salt_num_repeat=0
 $global:salt_shuffle_idx=0
-$MULTI_ENCRYPT_LENGTH=4
-$global:is_multi_encrypt_used=$false
+$HEADER_V3_LENGTH=4
 $global:encrypt_decrypt_rounds=2
+$HEADER_V4_LENGTH=5
+$text_shuffle_version_supported=1
+$global:text_shuffle_charset_processed=""
+$global:text_shuffle_charset_reversed=""
+$global:text_shuffle_hash=New-Object system.collections.hashtable
 
 $base64_charset="/+9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
 $password_valid_charset="9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"
+$text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 function print_usage_and_exit {
     write-host ""
-    write-host "win_pck_encrypt_decrypt.ps1: v1.0"
+    write-host "win_pck_encrypt_decrypt.ps1: v2.11"
     write-host ""
     write-host "Usage: win_pck_encrypt_decrypt.ps1 <filepath> <encrypt option> [<tag key>]"
 	write-host "-filepath: relative path and filename"
@@ -67,7 +76,15 @@ function print_usage_and_exit {
 	write-host "-tag key: < and > will be added to enclose tag key; i.e. pck-01 becomes <pck-01> and </pck-01>"
 	write-host " it is expected the tag is enlosed like xml tags, i.e. <pck-01> and </pck-01> enclosed the inline text to be encrypted"
 	write-host " if <tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted"
+    write-host ""
+	write-host "Usage 2: pck_encrypt_decrypt.ps1 enci|deci"
+	write-host "-encrypt and decrypt by promoting (reading from stdin)"
 	write-host ""
+	write-host "For encryption, you may optionally provide the number of rounds of encryption to be done, ranges from 1 to 9"
+	write-host "The more rounds of encryption is set, the more difficult it is to be decrypted"
+	write-host "e.g."
+	write-host "$ pck_encrypt_decrypt.ps1 enci5"
+	write-host "The above will run the encryption with 5 rounds"
 	exit 1
 }
 
@@ -80,18 +97,19 @@ function commands_check {
 }
 
 function arguments_check($commandLineArgs) {
+    if ($null -eq $commandLineArgs[0]) {
+        write-host "arguments_check: ERROR - no arguments provided, will print the help page;"
+        print_usage_and_exit;
+    }
     $firstFourCharArg1=$commandLineArgs[0].substring(0,4);
     if ((-Not (Test-Path $commandLineArgs[0])) -and (($ARG_KEY_DECRYPT_FROM_STDIN -eq $firstFourCharArg1) -or ($ARG_KEY_ENCRYPT_FROM_STDIN -eq $firstFourCharArg1))) {
-        #write-host "arguments_check: enci or deci mode;"
         $global:arg_base64_option=$commandLineArgs[0];
         $last_char=$arg_base64_option.substring($arg_base64_option.length - 1, 1);
         if ($last_char -match '^\d+$') {
             $global:encrypt_decrypt_rounds=$last_char
             $global:arg_base64_option=$arg_base64_option.substring(0, $arg_base64_option.length - 1);
         }
-        #write-host "__global:encrypt_decrypt_rounds:$($global:encrypt_decrypt_rounds); arg_base64_option:$($arg_base64_option);"
         $global:mode=$MODE_STDIN;
-        #write-host "__mode:$($mode);";
         if ($ARG_KEY_ENCRYPT_FROM_STDIN -eq $arg_base64_option) {
             $global:is_encrypt=$true;
         } elseif ($ARG_KEY_DECRYPT_FROM_STDIN -eq $arg_base64_option) {
@@ -112,7 +130,7 @@ function arguments_check($commandLineArgs) {
         write-host "arguments_check: is_copy_to_clipboard: [$is_copy_to_clipboard]"
         
         if ($is_encrypt -eq $true) {
-            write-host "arguments_check: encrypt_decrypt_roundds: [$encrypt_decrypt_rounds]"
+            write-host "arguments_check: encrypt_decrypt_rounds: [$encrypt_decrypt_rounds]"
         }
     } else {
         $global:arg_filepath=$commandLineArgs[0];
@@ -205,24 +223,82 @@ function ask_password {
     }
 }
 
-function extract_salt_from_encrypted_text($text) {
+function extract_header_from_encrypted_text($text) {
     if ($text.substring(2,1) -eq "$SALT_SEPARATOR") {
-        $global:is_salt_used=$true
+        $global:header_version=2
         $global:salt_num_repeat=$text.substring(0,1);
         $global:salt_shuffle_idx=$text.substring(1,1);
-        $encrypt_decrypt_rounds=1
+        $global:encrypt_decrypt_rounds=1
     } elseif ($text.substring(3,1) -eq "$SALT_SEPARATOR") {
-        $global:is_multi_encrypt_used=$true
+        $global:header_version=3
         $global:salt_num_repeat=$text.substring(0,1);
         $global:salt_shuffle_idx=$text.substring(1,1);
         $global:encrypt_decrypt_rounds=$text.substring(2,1);
+    } elseif ($text.substring(4,1) -eq "$SALT_SEPARATOR") {
+        $global:header_version=4
+        $global:salt_num_repeat=$text.substring(0,1);
+        $global:salt_shuffle_idx=$text.substring(1,1);
+        $global:encrypt_decrypt_rounds=$text.substring(2,1);
+        $global:text_shuffle_version=$text.substring(3,1);
+        if ($text_shuffle_version -ne $text_shuffle_version_supported) {
+            write-host "ERROR - invalid text_shuffle_version [$text_shuffle_version]";
+            exit 1;
+        }
     } else {
-        $encrypt_decrypt_rounds=1
-        #write-host "extract_salt_from_encrypted_text: salt is not found"
+        write-host "extract_header_from_encrypted_text: header is not found"
+        $global:encrypt_decrypt_rounds=1
     }
 }
 
 function password_process {
+	# obtain the password_removed_dups, dup_char_array and dup_count_array
+	# dup_char_array and dup_count_array are for text shuffle
+    $password_removed_dups=""
+    $dup_char_array = @()
+    $dup_count_array = @()
+
+    for ($i=0; $i -lt $password_from_stdin.length; $i++) {
+        $thisChar=$password_from_stdin.substring($i, 1)
+        if (-Not $password_removed_dups.contains($thisChar)) {
+            $password_removed_dups="$($password_removed_dups)$($thisChar)"
+        } else {
+            $dup_char_array+=$thisChar
+            $dup_count_array+=$i
+        }
+    }
+    
+    #write-host "password_process: password_removed_dups:[$password_removed_dups];"
+    #for ($i=0; $i -lt $dup_char_array.length; $i++) {
+    #    write-host "__element $i in dup_char_array [$($dup_char_array[$i])];"
+    #    write-host "__element $i in dup_count_array [$($dup_count_array[$i])];"
+    #}
+    #exit 1
+    $global:text_shuffle_charset_processed=$text_shuffle_charset
+
+    for ($i=0; $i -lt $dup_char_array.length; $i++) {
+        $thisLetter=$dup_char_array[$i]
+        $thisNumber=$dup_count_array[$i]
+        #write-host "__i:[$i]; charset:[$global:text_shuffle_charset_processed]; thisLetter:[$thisLetter]; thisNumber:[$thisNumber];"
+        $combined_charset="$($thisLetter)$($global:text_shuffle_charset_processed)"
+        $charset_processed=""
+        for ($j=0; $j -lt $combined_charset.length; $j++) {
+            $thisChar=$combined_charset.substring($j, 1)
+            if (-Not $charset_processed.contains($thisChar)) {
+                $charset_processed="$($charset_processed)$($thisChar)"
+            }
+        }
+        $charset_move_to_head=$charset_processed.substring($charset_processed.length-$thisNumber);
+        $global:text_shuffle_charset_processed="$($charset_move_to_head)$($charset_processed.substring(0, $charset_processed.length-$thisNumber))"
+    }
+    $global:text_shuffle_charset_reversed=$global:text_shuffle_charset_processed[$global:text_shuffle_charset_processed.Length..0] -join ""
+
+    # in windows, we have to use a hash table to shuffle the text_shuffle char, because windows doesn't have the 'tr' command
+    for ($i=0; $i -lt $text_shuffle_charset_processed.length; $i++) {
+        $text_shuffle_processed_char=$text_shuffle_charset_processed.substring($i, 1)
+        $text_shuffle_reversed_char=$text_shuffle_charset_reversed.substring($i, 1)
+        $global:text_shuffle_hash[$text_shuffle_processed_char] = $text_shuffle_reversed_char
+    }
+
     # if encrypt and tag based
 	#  generate $salt_num_repeat and $salt_shuffle_idx,then apply to $password_processed and $password_reversed
 	# if decrypt and tag based
@@ -265,55 +341,122 @@ function password_process {
     $global:password_hash['='] = '='
 }
 
-function do_work_on_stdin {
-    $global:encrypted_from_stdin = Read-Host "Please type or paste the encrypted text: "
-    ask_password;
-    if ($is_encrypt -eq $false) {
-        extract_salt_from_encrypted_text($encrypted_from_stdin);
-        if ($is_salt_used -eq $true) {
-            $global:encrypted_from_stdin=$encrypted_from_stdin.substring($SALT_LENGTH);
-        } elseif ($is_multi_encrypt_used -eq $true) {
-            $global:encrypted_from_stdin=$encrypted_from_stdin.substring($MULTI_ENCRYPT_LENGTH);
-        }
-    }
+function encrypt_one_line {
+    $global:error_one_line=""
+
     password_process;
-    $results=$encrypted_from_stdin;
-    if ($is_encrypt -eq $false) {
-        for ($i=0; $i -lt $encrypt_decrypt_rounds; $i++) {
-            $b64DecSB = [System.Text.StringBuilder]::new()
-            for ($j = 0; $j -lt $results.length; $j++) {
-                [void]$b64DecSB.append($password_hash["$($results[$j])"])
-            }
-            $results = [System.Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($b64DecSB.ToString())) 2>$null
-            if ([string]::IsNullOrEmpty($results)) {
-                write-host "ERROR - result is empty, you might have entered a wrong password"
-                exit 1
-            }
-            $results = stripLastLineFeedCharacter($results);
+    #$global:output_one_line=$global:input_one_line
+
+    # first, perform the text shuffle
+    $textShuffleSB = [System.Text.StringBuilder]::new()
+    for ($j = 0; $j -lt $input_one_line.length; $j++) {
+        # for characters not in the hashtable, let it be unconverted
+        if ($null -eq $text_shuffle_hash["$($input_one_line[$j])"]) {
+            [void]$textShuffleSB.append($($input_one_line[$j]))
+        } else {
+            [void]$textShuffleSB.append($text_shuffle_hash["$($input_one_line[$j])"])
         }
-    } else {
-        for ($i=0; $i -lt $encrypt_decrypt_rounds; $i++) {
-            $results_bytes = [System.Text.Encoding]::ASCII.GetBytes($results)
-            $results_b64=[Convert]::ToBase64String($results_bytes);
-            $b64EncSB = [System.Text.StringBuilder]::new()
-            for ($j = 0; $j -lt $results_b64.length; $j++) {
-                [void]$b64EncSB.append($password_hash["$($results_b64[$j])"])
-            }
-            $results = $b64EncSB.ToString();
-        }
-        $results = "$salt_num_repeat" + "$salt_shuffle_idx" + "$encrypt_decrypt_rounds" + $SALT_SEPARATOR + $results
+        
     }
+    $global:output_one_line = $textShuffleSB.ToString();
+    write-host "encrypt_one_line: global:output_one_line: [$global:output_one_line]"
+
+    for ($i=0; $i -lt $encrypt_decrypt_rounds; $i++) {
+        $output_one_line_bytes = [System.Text.Encoding]::ASCII.GetBytes($output_one_line)
+        $output_one_line_b64=[Convert]::ToBase64String($output_one_line_bytes);
+        $b64EncSB = [System.Text.StringBuilder]::new()
+        for ($j = 0; $j -lt $output_one_line_b64.length; $j++) {
+            [void]$b64EncSB.append($password_hash["$($output_one_line_b64[$j])"])
+        }
+        $output_one_line = $b64EncSB.ToString();
+    }
+    $global:output_one_line = "$salt_num_repeat" + "$salt_shuffle_idx" + "$encrypt_decrypt_rounds" + "$text_shuffle_version_supported" + $SALT_SEPARATOR + $output_one_line
+}
+
+function decrypt_one_line {
+    extract_header_from_encrypted_text($input_one_line)
+	$input_one_line_header_stripped=""
+	$global:error_one_line=""
+    if ($header_version -eq 2) {
+        $input_one_line_header_stripped=$input_one_line.substring($HEADER_V2_LENGTH)
+    } elseif ($header_version -eq 3) {
+        $input_one_line_header_stripped=$input_one_line.substring($HEADER_V3_LENGTH)
+    } elseif ($header_version -eq 4) {
+        $input_one_line_header_stripped=$input_one_line.substring($HEADER_V4_LENGTH)
+    }
+    password_process
+    $global:output_one_line=$input_one_line_header_stripped
+    for ($i=0; $i -lt $encrypt_decrypt_rounds; $i++) {
+        $b64DecSB = [System.Text.StringBuilder]::new()
+        for ($j = 0; $j -lt $global:output_one_line.length; $j++) {
+            [void]$b64DecSB.append($password_hash["$($global:output_one_line[$j])"])
+        }
+        try {
+            $global:output_one_line = [System.Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($b64DecSB.ToString())) 2>$null
+        } catch {
+            write-host "ERROR - you might have entered a wrong password"
+            exit 1
+        }
+        if ([string]::IsNullOrEmpty($global:output_one_line)) {
+            $global:error_one_line="ERROR - result is empty, you might have entered a wrong password" 
+            return
+        } 
+        $global:output_one_line = stripLastLineFeedCharacter($global:output_one_line);
+    }
+    if ([string]::IsNullOrEmpty($global:output_one_line)) {
+        $global:error_one_line="ERROR - result is empty, you might have entered a wrong password" 
+    } else {
+        # apply the text shuffle if header_version == 4
+        if ($header_version -eq 4) {
+            if ($text_shuffle_version_supported -eq 1) {
+                $textShuffleSB = [System.Text.StringBuilder]::new()
+                for ($j = 0; $j -lt $output_one_line.length; $j++) {
+                    # for characters not in the hashtable, let it be unconverted
+                    if ($null -eq $text_shuffle_hash["$($output_one_line[$j])"]) {
+                        [void]$textShuffleSB.append($($output_one_line[$j]))
+                    } else {
+                        [void]$textShuffleSB.append($text_shuffle_hash["$($output_one_line[$j])"])
+                    }
+                }
+                $global:output_one_line = $textShuffleSB.ToString();    
+            } else {
+                write-host  "ERROR - invalid text_shuffle_version_supported: [$text_shuffle_version_supported]"
+				exit 1
+            }
+        }
+    }
+}
+
+function do_work_on_stdin {
+    if ($is_encrypt -eq $false) {
+        $global:encrypted_from_stdin = Read-Host "Please type or paste the encrypted text"
+    } else {
+        $global:encrypted_from_stdin = Read-Host "Please type or paste the text to be encrypted"
+    }
+    
+    ask_password;
+    $global:input_one_line=$encrypted_from_stdin
+    if ($is_encrypt -eq $false) {
+        decrypt_one_line
+        if (-Not [string]::IsNullOrEmpty($global:error_one_line)) {
+            write-host $global:error_one_line
+            exit 1
+        } 
+    } else {
+        encrypt_one_line
+    }
+
     if ($is_show_b64_charset -eq $true) {
         write-host "password_processed: [$password_processed]"
         write-host "password_reversed:  [$password_reversed]"
     }
     if ($is_copy_to_clipboard -eq $true) {
-        Set-Clipboard -Value $results
+        Set-Clipboard -Value $global:output_one_line
         write-host ""
         write-host "The decrypted text is already copied to clipboard"
         write-host ""
     } else {
-        write-host "$results"
+        write-host "$global:output_one_line"
     }
 }
 
@@ -377,10 +520,9 @@ function do_work_on_a_file($f) {
             Add-Content -Path $g -Value $encryptedText
         } else {
             $firstLine = Get-Content $f -First 1
-            #write-host "do_work_on_a_file: firstLine:$($firstLine);"
-            extract_salt_from_encrypted_text($firstLine);
+            extract_header_from_encrypted_text($firstLine);
             password_process
-            if ($is_multi_encrypt_used -eq $true) {
+            if ($header_version -ge 3) {
                 (Get-Content $f| Select-Object -Skip 1) | Set-Content $f_tmp1
             } else {
                 Copy-Item -Path $f -Destination $f_tmp1
@@ -393,7 +535,15 @@ function do_work_on_a_file($f) {
                 }
                 [IO.File]::WriteAllText($fB64, $b64DecSB.ToString())
                 $b64Txt = [char[]][IO.File]::ReadAllBytes($fB64);
-                $by = [Convert]::FromBase64String($b64Txt);
+                try {
+                    $by = [Convert]::FromBase64String($b64Txt);
+                } catch {
+                    write-host "ERROR - you might have entered a wrong password"
+                    Remove-Item -Path $f_tmp1
+                    Remove-Item -Path $f_tmp2
+                    Remove-Item -Path $fB64
+                    exit 1
+                }
                 [IO.File]::WriteAllBytes($f_tmp2,$by);
                 $f_tmpPH=$f_tmp1
                 $f_tmp1=$f_tmp2
@@ -424,46 +574,16 @@ function do_work_on_a_file($f) {
                         $matched_found=$true
                         $matched_text = $_.substring($tag_key_head_matched_idx + $tag_key_head.length, $tag_key_tail_matched_idx - ($tag_key_head_matched_idx + $tag_key_head.length));
 
+                        $global:input_one_line=$matched_text
                         if ($is_encrypt -eq $false) {
-                            extract_salt_from_encrypted_text($matched_text)
-                            if ($is_salt_used -eq $true) {
-                                $matched_text=$matched_text.substring($SALT_LENGTH)
-                            } elseif ($is_multi_encrypt_used -eq $true) {
-                                $matched_text=$matched_text.substring($MULTI_ENCRYPT_LENGTH)
-                            }
-                        } 
-                        password_process
-                        $results=$matched_text
-                        if ($is_encrypt -eq $true) {
-                            for ($k = 0; $k -lt $encrypt_decrypt_rounds; $k++) {
-                                $matched_text_bytes = [System.Text.Encoding]::ASCII.GetBytes($results)
-                                $matched_text_b64=[Convert]::ToBase64String($matched_text_bytes);
-                                $b64EncSB = [System.Text.StringBuilder]::new()
-                                #$b64EncSB.append("$salt_num_repeat$salt_shuffle_idx$SALT_SEPARATOR")
-                                for ($j = 0; $j -lt $matched_text_b64.length; $j++) {
-                                    [void]$b64EncSB.append($password_hash["$($matched_text_b64[$j])"])
-                                }
-                                $results = $b64EncSB.ToString();
-                            }
-                            $results = "$salt_num_repeat" + "$salt_shuffle_idx" + "$encrypt_decrypt_rounds" + $SALT_SEPARATOR + $results
-                            #write-host "__results:[$results]"
+                            decrypt_one_line
+                            if (-Not [string]::IsNullOrEmpty($global:error_one_line)) {
+                                write-host $global:error_one_line
+                            } 
                         } else {
-                            for ($k = 0; $k -lt $encrypt_decrypt_rounds; $k++) {
-                                #write-host "__results:$($results);"
-                                $b64DecSB = [System.Text.StringBuilder]::new()
-                                for ($j = 0; $j -lt $results.length; $j++) {
-                                    [void]$b64DecSB.append($password_hash["$($results[$j])"])
-                                }
-                                $results = [System.Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($b64DecSB.ToString())) 2>$null
-                                if ([string]::IsNullOrEmpty($results)) {
-                                    write-host "ERROR - result is empty, you might have entered a wrong password"
-                                    exit 1
-                                }
-                                $results=stripLastLineFeedCharacter($results);
-                                #write-host "__decrypted: results:[$results]"
-                            }
+                            encrypt_one_line
                         }
-                        $results_with_tags="$tag_key_head$results$tag_key_tail"
+                        $results_with_tags="$tag_key_head$output_one_line$tag_key_tail"
 
                         if ($is_generate_results_in_file -eq $true) {
                             "$text_before_matched$results_with_tags$text_after_matched" >> $g
@@ -482,6 +602,9 @@ function do_work_on_a_file($f) {
         if ($matched_found -eq $false) {
             write-host "WARN: No matched text is found."
         }
+        if ($is_generate_results_in_file -eq $false) {
+            write-host "-----RESULTS END-----"
+        }        
     }
 }
 

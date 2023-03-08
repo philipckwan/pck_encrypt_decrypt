@@ -15,7 +15,7 @@ DONE(v1.11)-feature: enhance the password to leverage the duplicated characters 
 DONE(v1.11)-For encryption, it shouldn't be "Please type or paste the encrypted text", should be "Please type or paste the text to be encrypted"
 FIXED(v1.11)-BUG for linux (not sure about windows yet) interactive (enci) mode, if input has backslash "\", it will not be encrypted properly
  FIXED(v1.11)-i.e. "abc\def" becomes "abcdef" when decrypted
-
+DONE(v2.11)-port from linux (v1.11) to windows (v2.11)
 
 some commands that are useful:
 
