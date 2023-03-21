@@ -1,0 +1,15 @@
+html,
+body {
+  height: 100%;
+}
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 13px;
+  display: flex;
+  justify-content: left;
+  margin: 0;
+}
+body,
+input {
+  color: black;
+}

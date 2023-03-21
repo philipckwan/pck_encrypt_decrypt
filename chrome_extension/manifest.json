@@ -1,0 +1,20 @@
+{
+"manifest_version": 3,  
+"name": "PCK Encrypt Decrypt",
+"description": "Apply pck_encrypt_decrypt to text selected",
+"icons": {
+  "128": "icons/p128.png",
+  "16": "icons/p16.png",
+  "256": "icons/p256.png",
+  "32": "icons/p32.png",
+  "48": "icons/p48.png",
+  "512": "icons/p512.png",
+  "64": "icons/p64.png"
+},
+"version": "0.3",
+"permissions": [ "contextMenus", "notifications", "storage", "activeTab", "scripting" ],
+"background": {
+  "service_worker":"worker.js",
+  "type": "module"
+}
+}

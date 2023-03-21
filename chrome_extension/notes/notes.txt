@@ -1,0 +1,26 @@
+TODO:
+
+-should app mode requires encrypt to enter password twice?
+-if decrypt to empty string, it should be ERROR
+-bundle and ship
+-encrypt to replace
+when prompted for password, mask the password
+-there is an extra line break after decrypt somehow
+
+DONE:
+
+DONE-finish up decrypt
+DONE-result copy to clipboard
+DONE-write the app part
+ DONE-encrypt
+ DONE-decrypt
+ DONE-swap
+ DONE-dropdown box for encrypt difficulty
+DONE-password valid checking
+DONE-show alert for success results and copied to clipboard
+DONE-better error handling and notify user 
+ DONE-wrong password, decryption returns empty results
+ DONE-password not match
+DONE-older version support for decrypt 
+DONE-icon images
+DONE/FIXED-encryptdecryptrounds hardcoded to 5
