@@ -11,7 +11,7 @@
   "512": "icons/p512.png",
   "64": "icons/p64.png"
 },
-"version": "0.3",
+"version": "1.0",
 "permissions": [ "contextMenus", "notifications", "storage", "activeTab", "scripting" ],
 "background": {
   "service_worker":"worker.js",
