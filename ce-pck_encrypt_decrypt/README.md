@@ -3,9 +3,9 @@ PCK Encrypt Decrypt (Chrome Extension)
 
 This folder contains the Chrome Extension of PCK Encrypt Decrypt.<br/>
 
-If you want to install this Chrome Extension directly from this repository, you will have to the "Load Unpack" function.
+If you want to install this Chrome Extension directly from this repository, you will have to use the "Load Unpack" function.
 Please see the instructions below:<br/>
-https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/
+https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
 
 Installation
 -
