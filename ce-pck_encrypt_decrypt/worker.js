@@ -144,3 +144,8 @@ const onClicked = async (info, tab) => {
   }
 };
 chrome.contextMenus.onClicked.addListener(onClicked);
+
+chrome.action.onClicked.addListener(() => onClicked({
+  menuItemId: 'launch-app',
+  selectionText: ''
+}));

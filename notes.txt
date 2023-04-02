@@ -16,6 +16,9 @@ DONE(v1.11)-For encryption, it shouldn't be "Please type or paste the encrypted 
 FIXED(v1.11)-BUG for linux (not sure about windows yet) interactive (enci) mode, if input has backslash "\", it will not be encrypted properly
  FIXED(v1.11)-i.e. "abc\def" becomes "abcdef" when decrypted
 DONE(v2.11)-port from linux (v1.11) to windows (v2.11)
+-add a mode for providing the text to encrypt/decrypt at argument
+ -furthermore, need to consider a one line mode to enter both text and password for automation?
+-able to pipe text to the script
 
 some commands that are useful:
 
