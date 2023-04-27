@@ -79,7 +79,7 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.11"
+	echo "pck_encrypt_decrypt.sh v1.11.2"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -453,7 +453,7 @@ function do_work_on_stdin {
 	if [ "${is_copy_to_clipboard}" = true ] ; then
 		echo "$output_one_line" | ${PBCOPY}
 		echo ""
-		echo "The decrypted text is already copied to clipboard"
+		echo "The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
 		echo ""
 	else
 		echo "$output_one_line"

@@ -54,7 +54,7 @@ document.addEventListener('submit', async e => {
       let outputMsg = "";
       try {
         await navigator.clipboard.writeText(outputText);
-        outputMsg = `(results copied to clipboard; length of text:${outputText.length})`;
+        outputMsg = `(results copied to clipboard; length of text:${outputText.length}) (There is a known issue of having an extra space at the end of some decrypted text, please be aware)`;
       } catch (ex1) {
         outputMsg = `!!!ERROR - failed to write to clipboard!!!`;
         timeLog(`ERROR - failed to write to clipboard; ${ex1};`);

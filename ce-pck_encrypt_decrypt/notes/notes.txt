@@ -8,6 +8,7 @@ when prompted for password, mask the password
 -there is an extra line break after decrypt somehow
 DONE-v1.2.2, add "Encrypt to clipboard" and "Decrypt to clipboard" to app
 DONE-v1.1.2, able to pin the extension and launch app
+DONE-v1.2.4, add warning for having an extra space when decrypting to clipboard in app
 
 DONE:
 

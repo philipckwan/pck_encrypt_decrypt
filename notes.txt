@@ -19,6 +19,7 @@ DONE(v2.11)-port from linux (v1.11) to windows (v2.11)
 -add a mode for providing the text to encrypt/decrypt at argument
  -furthermore, need to consider a one line mode to enter both text and password for automation?
 -able to pipe text to the script
+-BUG; there is an extra space when decrypting (using chrome extension app) an encryption (from linux shell script, enci mode)
 
 some commands that are useful:
 
