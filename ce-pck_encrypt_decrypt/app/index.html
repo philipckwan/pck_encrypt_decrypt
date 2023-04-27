@@ -2,10 +2,11 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>PCK Encrypt Decrypt [v1.0]</title>
+  <title>PCK Encrypt Decrypt</title>
   <link rel="stylesheet" type="text/css" href="index.css">
   </head>
   <body>
+    <br />
     <form action="#">
       <div>
         <table>
@@ -26,7 +27,9 @@
 
       <div class="submit">
         <button type="submit" id="decrypt">Decrypt</button>
+        <button type="submit" id="decrypt_clipboard">Decrypt to clipboard</button>
         <button type="submit" id="encrypt">Encrypt</button>
+        <button type="submit" id="encrypt_clipboard">Encrypt to clipboard</button>
         <button type="button" id="swap">Swap</button>
         <label for="cars">Encrypt Security (1-9):</label>
         <select name="encryptRounds" id="encryptRounds">
@@ -40,7 +43,10 @@
           <option value="8">8</option>
           <option value="9">9</option>
         </select>
-        </div>
+      </div>
+
+      <div>
+        PCK Encrypt Decrypt [v1.2.2]
       </div>
     </form>
     <script src="/pck_encrypt_decrypta.js" type="module"></script>
