@@ -160,7 +160,7 @@ Please re-enter the password: (input the same passphrase here)
 555-WlCyjkZThifTk2Ofaa2MZMAxreOcYif3YaT2ZS3=
 ```
 
-Cryptography analysis and rational of this tool
+Cryptography analysis and rationale of this tool
 -
 
 I am not an expert in cryptography, but I do know at a high level about some common cryptography concepts such as public and private key (RSA) cryptography.<br/>
