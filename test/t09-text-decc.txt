@@ -1,0 +1,18 @@
+1) decrypt this file with decc mode on tag <en.2>:
+test/t09-text-decc.txt
+
+with this password:
+orangeBird
+
+i.e.
+$ ./pck_encrypt_decrypt.sh test/t09-text-decc.txt decc en.2
+
+The results should be that only the first tag <en.2> is being decrypted and copied to clipboard
+
+The encrypted text here should be "It is 19-2-2024 today". <en.1>5661-KCuocyDzMNBHHW2oGxd3/yPoEYDOKwBYLDdarYH6QxlNcgLlKEdajC9wK6BRjAcluYc9D3sFGyBSEWkzAWHUDvXVAYcAcg20Gyk3Av+zSeDMjFDALWuWcELzLXceHgBXAClUDFDVK5cNcePWdeLxdwDaJAvQ</en.1> This is the end
+The encrypted text here should be "iAmHappyYesterday-18/2/2024". <en.2>4841-kCV/O48+zNrUkoVnKaDSVCpUKauUiF5aKEuOU48+AF5WzMJLkMJVOOrVf3JHLnVqLMVNJ4A6ADxqJ25NAaujIMpUKoDGLOxKkMd1M/m=</en.2> This is the end
+The encrypted text here should be "HowAboutTomorrow:20 Feb, 2024?". <en.2>1351-P5EMOOj+wOwGR3zQOJbUXoucRI4RRfK0Q4uQO44+Y9uTRfO5QcTISMwRKOWMP5epPNWTpObUwI0YQIWKRG0uhO41R9ulhH5+wI0oSI0+W4uVXcuvRHAFRP/VX4OLhIX/w9oipO40wOSXQQb2pcoZtcw9UQJZ</en.2> This is the end
+
+2) All tags in this file is encrypted with the same password as stated above (you may verify by decrypting them all using mode "dec"), 
+ this test demonstrated the usage of mode "decc",
+ and that it will only match the 1st tag matched and copy to clipboard

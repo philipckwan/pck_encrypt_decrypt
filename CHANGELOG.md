@@ -1,5 +1,8 @@
 For pck_encrypt_decrypt.sh (Linux bash script):
-
+-v1.12 (20240219)
+1) Added mode "decc" to decrypt from file with a tag, and only decrypt and copy the first matched tag to clipboard.
+ This is a feature that helps people to directly decrypt a password and use it by pasting it right away.
+ 
 -v1.11 (20230302)
 1) for inteactive mode and file tag mode, add more security by allowing password with duplicate characters to further shuffle the text
 2) fix issue in interactive mode where the special character '\' is not supported previously

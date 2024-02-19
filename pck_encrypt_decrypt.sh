@@ -15,6 +15,7 @@ PBCOPY=pbcopy
 
 ARG_KEY_ENCRYPT_IN_MEMORY="enc"
 ARG_KEY_DECRYPT_IN_MEMORY="dec"
+ARG_KEY_DECRYPT_IN_MEMORY_COPY_TO_CLIPBOARD="decc"
 ARG_KEY_ENCRYPT_IN_FILE="encf"
 ARG_KEY_DECRYPT_IN_FILE="decf"
 ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION="decfs"
@@ -79,11 +80,11 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.11.2"
+	echo "pck_encrypt_decrypt.sh v1.12.1"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
-	echo "-encrypt option: enc | dec | encf | decf"
+	echo "-encrypt option: enc | dec | encf | decf | decc | decfs"
 	echo "-tag key: < and > will be added to enclose tag key; i.e. pck-01 becomes <pck-01> and </pck-01>"
 	echo " it is expected the tag is enlosed like xml tags, i.e. <pck-01> and </pck-01> enclosed the inline text to be encrypted"
 	echo " if <tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted"
@@ -109,7 +110,7 @@ function command_check {
 }
 
 function commands_check {
-  command_check "${BASE64}"
+	command_check "${BASE64}"
 	command_check "${BASENAME}"
 	command_check "${DIRNAME}"
 	command_check "${TR}"
@@ -178,6 +179,10 @@ function arguments_check {
 		elif [ "$ARG_KEY_DECRYPT_IN_MEMORY" == "$arg_base64_option" ]
 		then
 			is_encrypt=false
+		elif [ "$ARG_KEY_DECRYPT_IN_MEMORY_COPY_TO_CLIPBOARD" == "$arg_base64_option" ]
+		then
+			is_encrypt=false
+			is_copy_to_clipboard=true
 		elif [ "$ARG_KEY_ENCRYPT_IN_FILE" == "$arg_base64_option" ]
 		then
 			is_generate_results_in_file=true
@@ -218,6 +223,7 @@ function arguments_check {
 		fi
 		echo "arguments_check: arg_filepath: [$arg_filepath]"
 		echo "arguments_check: is_encrypt: [$is_encrypt]"
+		echo "arguments_check: is_copy_to_clipboard: [$is_copy_to_clipboard]"
 		echo "arguments_check: mode: [$mode]"
 		echo "arguments_check: filepath: [$filepath]"
 		echo "arguments_check: filename: [$filename]"
@@ -560,6 +566,13 @@ function do_work_on_a_file {
 							decrypt_one_line
 							if [ ! -z "${error_one_line}" ] ; then
 								echo "${error_one_line}"
+							elif [ "${is_copy_to_clipboard}" = true ] ; then
+								echo "$output_one_line" | ${PBCOPY}
+								echo ""
+								echo "The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
+								echo "Warning: only the first matched tag will be decrypted and copied to clipboard"
+								echo ""
+								exit 0
 							fi							
 						else
 							encrypt_one_line

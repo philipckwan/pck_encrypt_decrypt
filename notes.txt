@@ -5,17 +5,12 @@ TODO:
  this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
 -feature: filename encrypt
 -feature: header encrypt, i.e. encrypt the first 100 bytes
+DONE(v1.12)-feature: add mode "decc" to decrypt from file and copy to clipboard, provided only 1 tag is matched
 -all enci mode to have an optional tag, so that the encrypted text is already enclosed in tag
 -in dec mode with tag, if the password is wrong, it outputs the orginal line with the decrypted content empty, it should output an error instead
 -enhance to handle multiple lines of encryption tags, instead of just 1 line
 -BUG for win version, chinese characters seem cannot be encrypted/decrypted with tags 
 CANNOT FIX-BUG for linux version, seems using deci (interactive mode) there is a maximum limit on the input encrypted string, rest will be capped if over and the results is wrong
-DONE(v1.11)-feature: enhance the password to leverage the duplicated characters to further shuffle the original text
- DONE(v1.11)-ensure can encrypt/decrypt non ascii plain text (i.e. Chinese, symbols like $*@#)
-DONE(v1.11)-For encryption, it shouldn't be "Please type or paste the encrypted text", should be "Please type or paste the text to be encrypted"
-FIXED(v1.11)-BUG for linux (not sure about windows yet) interactive (enci) mode, if input has backslash "\", it will not be encrypted properly
- FIXED(v1.11)-i.e. "abc\def" becomes "abcdef" when decrypted
-DONE(v2.11)-port from linux (v1.11) to windows (v2.11)
 -add a mode for providing the text to encrypt/decrypt at argument
  -furthermore, need to consider a one line mode to enter both text and password for automation?
 -able to pipe text to the script
@@ -32,6 +27,12 @@ diff (cat <file1>) (cat <file2>)
 ----------------------------------------------------
 DONE:
 
+DONE(v1.11)-feature: enhance the password to leverage the duplicated characters to further shuffle the original text
+ DONE(v1.11)-ensure can encrypt/decrypt non ascii plain text (i.e. Chinese, symbols like $*@#)
+DONE(v1.11)-For encryption, it shouldn't be "Please type or paste the encrypted text", should be "Please type or paste the text to be encrypted"
+FIXED(v1.11)-BUG for linux (not sure about windows yet) interactive (enci) mode, if input has backslash "\", it will not be encrypted properly
+ FIXED(v1.11)-i.e. "abc\def" becomes "abcdef" when decrypted
+DONE(v2.11)-port from linux (v1.11) to windows (v2.11)
 UNREPRODUCIBLE-for decrypt, if tag not found, got error "Invalid character in input stream.", should make it more user friendly such as "tag not found"
 UNREPRODUCIBLE-BUG for linux version, a bug seems cannot decrypt general login file with tags: google.1,google.2; by itself (just google.1 or google.2) is fine though
 DONE(win v0.4)-port the latest features from .sh to .ps1
