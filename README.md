@@ -137,6 +137,17 @@ As in this example:<br/>
 ```./pck_encrypt_decrypt.sh test/t01-text-tag_key_within_line.txt encf9 enc-01```<br/>
 The default encryption strength is currently set at "2".<br/>
 A higher encryption option will make the encrypted text longer, this will cause the text to be less likely to be decrypted by brute force, or keep guessing on the passphrase.
+* decrypt and copy to clipboard<br/>
+```decc```<br/>
+Use this mode to decrypt from file with tags, where the first matched decrypted will be copied to clipboard.<br/>
+As in this example:<br/>
+```./pck_encrypt_decrypt.sh test/t09-text-decc.txt decc en.2```<br/>
+* decrypt and strip the last file extension<br/>
+```decfs```<br/>
+For mode "decf" decryption of a whole file, in the general case it will append the extension ".decf" to the decrypted file.<br/>
+But for this mode, instead it will strip the last file extension of the original encrypted file.<br/>
+This is useful for it reverse the operation that when one uses the mode "encf" to encrypt the file, it appends the ".encf" extension.<br/>
+Using this mode to decrypt will get you back to the filename when you originally encrypted it.<br/>
 
 Interactive based
 -
