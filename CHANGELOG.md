@@ -1,4 +1,8 @@
 For pck_encrypt_decrypt.sh (Linux bash script):
+-v1.13 (20240303)
+1) Enhanced the output display when decrypting, especially displaying more information with multiple matched lines when decrypting
+2) Change the checking of the command "pbcopy", which is only a mac supported command. In other Linux if this command is not available, it will give a more appropiate error message only if the selected mode requires copying to clipboard.
+
 -v1.12 (20240219)
 1) Added mode "decc" to decrypt from file with a tag, and only decrypt and copy the first matched tag to clipboard.
  This is a feature that helps people to directly decrypt a password and use it by pasting it right away.

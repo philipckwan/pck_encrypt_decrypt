@@ -80,7 +80,7 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.12.1"
+	echo "pck_encrypt_decrypt.sh v1.13.1"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -109,6 +109,15 @@ function command_check {
 	fi
 }
 
+function commands_check_post_arguments {
+	which "${PBCOPY}" > /dev/null 2>&1
+	if [ 1 -eq $? ] && [ "${is_copy_to_clipboard}" = true ]
+	then
+		echo "commands_check_post_arguments: ERROR - command [$PBCOPY] not found and the chosen mode requires copy to clipboard"
+		print_usage_and_exit
+	fi
+} 
+
 function commands_check {
 	command_check "${BASE64}"
 	command_check "${BASENAME}"
@@ -116,7 +125,7 @@ function commands_check {
 	command_check "${TR}"
 	command_check "${REV}"
 	command_check "${READ}"
-	command_check "${PBCOPY}"
+	#command_check "${PBCOPY}"
 }
 
 function arguments_check {
@@ -559,8 +568,10 @@ function do_work_on_a_file {
 						text_after_matched=${line:$tag_key_tail_matched_idx + ${#tag_key_tail}}
 						tag_found=true
 						matched_found=true
+						echo ""
+						echo "Found this line:"
+						echo "$line"
 						matched_text=${line:$tag_key_head_matched_idx+${#tag_key_head}:$tag_key_tail_matched_idx-($tag_key_head_matched_idx+${#tag_key_head})}
-
 						input_one_line="${matched_text}"
 						if [ "${is_encrypt}" = false ] ; then
 							decrypt_one_line
@@ -568,10 +579,9 @@ function do_work_on_a_file {
 								echo "${error_one_line}"
 							elif [ "${is_copy_to_clipboard}" = true ] ; then
 								echo "$output_one_line" | ${PBCOPY}
-								echo ""
-								echo "The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
+								echo "DECRYPTED: The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
 								echo "Warning: only the first matched tag will be decrypted and copied to clipboard"
-								echo ""
+								echo "-----RESULTS END-----"
 								exit 0
 							fi							
 						else
@@ -582,6 +592,7 @@ function do_work_on_a_file {
 						if [ "${is_generate_results_in_file}" = true ] ; then
 							echo "$text_before_matched$results_with_tags$text_after_matched" >> $g
 						else
+							echo "DECRYPTED: The decrypted line is:"
 							echo "$text_before_matched$results_with_tags$text_after_matched"
 						fi
 						break						
@@ -597,6 +608,7 @@ function do_work_on_a_file {
 		if [ "${matched_found}" = false ] ; then
 			echo "WARN: No matched text is found."
 		fi
+		echo ""
 		echo "-----RESULTS END-----"	
 	fi
 }
@@ -623,6 +635,7 @@ function stringIndexOf {
 
 commands_check
 arguments_check $@
+commands_check_post_arguments
 if [ "${mode}" = "${MODE_STDIN}" ]
 then
 	do_work_on_stdin
