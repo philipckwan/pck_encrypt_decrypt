@@ -23,6 +23,7 @@ ARG_KEY_ENCRYPT_FROM_STDIN="enci"
 ARG_KEY_DECRYPT_FROM_STDIN="deci"
 ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET="decis"
 ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD="decic"
+ARG_KEY_ENCRYPT_FROM_STDIN_COPY_TO_CLIPBOARD="encic"
 
 arg_filepath=""
 arg_base64_option=""
@@ -80,7 +81,7 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.13.1"
+	echo "pck_encrypt_decrypt.sh v1.14.1"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -89,8 +90,9 @@ function print_usage_and_exit {
 	echo " it is expected the tag is enlosed like xml tags, i.e. <pck-01> and </pck-01> enclosed the inline text to be encrypted"
 	echo " if <tag key> is not provided, it will assume the whole file needs to be encrypted/decrypted"
 	echo ""
-	echo "Usage 2: pck_encrypt_decrypt.sh enci|deci"
+	echo "Usage 2: pck_encrypt_decrypt.sh enci|deci|encic|decic"
 	echo "-encrypt and decrypt by promoting (reading from stdin)"
+	echo "-the 'c' suffix in the mode will have the results copy to clipboard"
 	echo ""
 	echo "For encryption, you may optionally provide the number of rounds of encryption to be done, ranges from 1 to 9"
 	echo "The more rounds of encryption is set, the more difficult it is to be decrypted"
@@ -153,6 +155,10 @@ function arguments_check {
 		elif [ "$ARG_KEY_DECRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$arg_base64_option" ]
 		then
 			is_encrypt=false
+			is_copy_to_clipboard=true
+		elif [ "$ARG_KEY_ENCRYPT_FROM_STDIN_COPY_TO_CLIPBOARD" == "$arg_base64_option" ]
+		then
+			is_encrypt=true
 			is_copy_to_clipboard=true
 		else
 			echo "arguments_check: ERROR - arg_base64_option is not specified correctly"
@@ -468,7 +474,11 @@ function do_work_on_stdin {
 	if [ "${is_copy_to_clipboard}" = true ] ; then
 		echo "$output_one_line" | ${PBCOPY}
 		echo ""
-		echo "The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
+		if [ "${is_encrypt}" = false ] ; then
+			echo "The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
+		else
+			echo "The encrypted text is already copied to clipboard; length of text:${#output_one_line};"
+		fi
 		echo ""
 	else
 		echo "$output_one_line"

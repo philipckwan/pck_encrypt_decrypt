@@ -15,6 +15,7 @@ CANNOT FIX-BUG for linux version, seems using deci (interactive mode) there is a
  -furthermore, need to consider a one line mode to enter both text and password for automation?
 -able to pipe text to the script
 -BUG; there is an extra space when decrypting (using chrome extension app) an encryption (from linux shell script, enci mode)
+DONE(v1.14)-feature: add mode "encic" to encrypt text from interactive mode, and copy to clipboard
 
 some commands that are useful:
 

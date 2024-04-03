@@ -1,4 +1,8 @@
 For pck_encrypt_decrypt.sh (Linux bash script):
+
+-v1.14 (20240403)
+1) Add mode "encic" to encrypt text from interactive mode, and copy to clipboard
+
 -v1.13 (20240303)
 1) Enhanced the output display when decrypting, especially displaying more information with multiple matched lines when decrypting
 2) Change the checking of the command "pbcopy", which is only a mac supported command. In other Linux if this command is not available, it will give a more appropiate error message only if the selected mode requires copying to clipboard.
