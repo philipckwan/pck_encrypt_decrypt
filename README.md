@@ -2,23 +2,23 @@ PCK Encrypt Decrypt
 =
 
 PCK Encrypt Decrypt is an encryption and decryption tool.<br/>
-It supports both Linux as a shell script, and Windows as a powershell script.<br/>
-It can encrypt and decrypt any data files.<br/>
-It can also encrypt and decrypt part of a text file.<br/>
+It supports (1) Linux as a shell script, (2) Windows as a powershell script, and (3) has a Chrome Extension to run on web browser. <br/>
+It can encrypt and decrypt part of a text file.<br/>
 That means, you can have a text file where only certain parts of it are encrypted.<br/>
+And it can encrypt and decrypt files of any data (i.e. image, video, pdf) too.<br/>
 
 Features
 -
 
 This tool:
 * can encrypt and decrypt data in 3 methods:<br/>
-(1) as a whole file<br/>
-(2) given a plaintext file, only encrypt a segment of it.<br/>
+(1) given a plaintext file, only encrypt parts of it.<br/>
+(2) as a whole file<br/>
 (3) interactive mode, where you are prompted for the text to be encrypted or decrypted.<br/>
 * the results of the encryption and decryption can be outputted in 3 ways:<br/>
 (1) as a file, which means it will be saved on the computer.<br/>
-(2) display on the terminal, which means it only stays in the computer memory and not being saved as a file.<br/>
-(3) copy to the clipboard (i.e. like using Ctrl-C to copy and paste), which means not only it stays in the computer memory, but it also won't be shown on the terminal.
+(2) display on the terminal/screen, which means it only stays in memory and not being saved to the computer hard disk.<br/>
+(3) copy to the clipboard (i.e. like using Ctrl-C to copy and paste), which means not only it stays in the computer memory, but it also won't be shown on the computer screen.
 * have user provides a passphrase when performing the encryption. User will need to provide the same passphrase when performing the decryption.
 * allows the encryption strength to be set between 1 (lowest) to 9 (highest). The higher the encryption strength, the more difficult it is to decrypt by brute force guessing the passphrase.
 
@@ -159,6 +159,7 @@ pck_encrypt_decrypt.sh <encrypt option>
 * encrypt option: The encryption and decryption option is one of the following:<br/>
 ```enci``` - encrypt by first prompting for the text to be encrypted. The results will be displayed on console.<br/>
 ```deci``` - decrypt by first prompting for the text to be decrypted. The results will be displayed on console.<br/>
+```encic``` - encrypt by first prompting for the text to be encrypted. The results will be copied to clipboard.<br/>
 ```decic``` - decrypt by first prompting for the text to be decrypted. The results will be copied to clipboard.<br/>
 The encryption strength option is also supported in these interactive modes.
 For example, you may run the tool to encrypt a text with strength of "5" like this:<br/>
