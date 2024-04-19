@@ -4,6 +4,15 @@ import {askPassword, encryptOneLine, decryptOneLine} from "./pck_encrypt_decrypt
 async function launchApp(selectedText) {
   timeLog(`worker.launchApp: selectedText length:[${selectedText.length}]; excerpt:[${selectedText.substring(0,5)}...${selectedText.substring(selectedText.length-5)}]`);
   const win = await chrome.windows.getCurrent();
+  chrome.windows.create({
+    url: '/app/index.html?content=' + encodeURIComponent(selectedText),
+    width: 700,
+    height: 400,
+    left: win.left + Math.round((win.width - 700) / 2),
+    top: win.top + Math.round((win.height - 400) / 2),
+    type: 'popup'
+  })
+  /*
   chrome.storage.local.get({
     width: 700,
     height: 400,
@@ -19,6 +28,7 @@ async function launchApp(selectedText) {
       type: 'popup'
     });
   });
+  */
 }
 
 async function copyToClipboard(text, tabId) {
