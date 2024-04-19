@@ -22,14 +22,17 @@ This tool:
 * have user provides a passphrase when performing the encryption. User will need to provide the same passphrase when performing the decryption.
 * allows the encryption strength to be set between 1 (lowest) to 9 (highest). The higher the encryption strength, the more difficult it is to decrypt by brute force guessing the passphrase.
 
-Command Arguments
+Chrome Extensions and Windows version
 -
 
-Note: To run this tool in Windows, execute the Windows version of the script in a powershell terminal:<br/>
+The Chrome Extension version of this tool is located here:<br/>
+https://github.com/philipckwan/pck_encrypt_decrypt/tree/main/ce-pck_encrypt_decrypt
+
+For Windows, execute the Windows version of the script in a powershell terminal:<br/>
 ```win_pck_encrypt_decrypt.ps1```<br/>
 The rest of the command line syntax is the same as the Linux shell version.<br/>
 
-Key Example
+Examples
 -
 To showcase one of the major feature of this tool, here is the example of encrypting and decrypting a segment of a plaintext file.<br/>
 Originally, I have a plaintext file:
@@ -102,7 +105,7 @@ Please enter the password: (input "qazWSX468" here)
 There are more examples of usage located in the ```test``` folder.<br/>
 You may look into them and follow their instructions to try and get more understanding of the capability of this tool.
 
-Command arguments and options
+Running this tool
 -
 
 There are 2 ways to run this tool:<br/>
@@ -187,13 +190,12 @@ For example, please do let me know if this algorithm can be easily hacked.
 
 I see this tool have the following advantage, as compared to using other means of encryption, such as the password protect mechanism in Microsoft Office products, Openssl encryption, etc...
 * because it is relying on common Linux tools such as base64, rev, tr, it can be independent from my script, meaning that one can use the same linux commands to decrypt it. It means a sense of portability, and less reliant on proprietary technology (i.e. Microsoft Word)
-* I assume similar algorithm and commands can be replicated in a Windows environment too, in which I should put such items to a TODO list, i.e. to help come up with the same command or scripts in Windows power shell
 * Since this tool can partially encrypt text file based on xml like tag enclosing the content, I personally see the use of this tool to encrypt my always growing list of web access username and passwords.<br/> 
 The web access and username parts can be left unencrypted, with only the password part to be encrypted.<br/> 
 And when decrypting, I don't have to decrypt the whole file but just decrypt only the line that I want.<br/> 
 If setting different password for different tags, then the whole text file can be accessed with different passwords.
 
-The Base64 charset shuffling
+The Base64 character set shuffling
 -
 
 Details of this shuffling can be found in the script. But just to provide here in a nutshell.<br/>
@@ -207,7 +209,23 @@ Then, a reverse of the sequence is produced:<br/>
 and it will be used along with the linux command `tr` to replace the Base64 encoded content:<br/>
 ```echo $content | $TR "${base64_charset}" "${base64_reverse}```<br/>
 The entropy of such shuffling, should be depended on the length of the user input password.<br/>
-In other words, the longer it is, the less repeating character it contains, the more unique character it contains, will result in a more deviated sequence than the original base64 character set, which should therefore results in a more secure shuffled contents than the original Base64 encoded contents.
+In other words, the longer it is, the less repeating character it contains, the more unique character it contains, will result in a more deviated sequence than the original base64 character set, which should therefore results in a more secure shuffled contents than the original Base64 encoded contents.<br/>
+Due to the nature of generating this Base64 character set, the repeating characters of a password do not cause further deviated sequence of this Base64 sequence.<br/>
+But with the alpha-numeric character set shuffling (see section below), repeat characters of a password can be used to shuffle the resulting text, making the results more difficult to be decrypted.<br/>
+
+The alpha-numeric character set shuffling
+-
+
+Since version v1.11, the tool introduced an extra text shuffling, the alpha-numeric characters shuffling.<br/>
+The password from the user will be used to further generate a text shuffling sequence.<br/>
+```text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"```<br/>
+In particular, the duplicated characters of the password are used to generate this text shuffling sequence.<br/>
+For encryption, before applying the Base64 character set shuffling, the text first goes through this alpha-numeric shuffling.<br/>
+Then, the Base64 character shuffling and encryption will be applied.<br/>
+For decryption, after the Base64 character decryption is applied, the text will go through the alpha-numeric shuffling again.<br/>
+The end result is that, in addition to the Base64 character set encryption, the resulting text will also have an extra text shuffling provided by the alpha-numeric character shuffling.<br/>
+For password encryption, this could be useful in that even if the text can be decrypted by the Base64 character encryption from passwords that has duplicate characters, the text shuffling will still make it difficult to be decrypted.<br/>
+As this alpha-numeric character set only contains alphabets and numbers, this shuffling cannot be applied to other characters, such as Chinese characters.<br/>
 
 Change Log
 -
