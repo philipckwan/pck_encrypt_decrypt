@@ -2,8 +2,17 @@ PCK Encrypt Decrypt (Chrome Extension)
 =
 
 This folder contains the Chrome Extension of PCK Encrypt Decrypt.<br/>
+See the main readme of PCK Encrypt Decrypt here:<br/>
+https://github.com/philipckwan/pck_encrypt_decrypt/tree/main
 
-If you want to install this Chrome Extension directly from this repository, you will have to use the "Load Unpack" function.
+PCK Encrypt Decrypt is an encryption and decryption tool.<br/>
+It supports (1) Linux as a shell script, (2) Windows as a powershell script, and (3) has a Chrome Extension to run on web browser.<br/>
+It can encrypt and decrypt part of a text file.<br/>
+
+To run this Chrome Extension in Developer mode
+-
+
+If you want to install this Chrome Extension directly from this repository, you will have to use the "Load Unpack" function.<br/>
 Please see the instructions below:<br/>
 https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
 
@@ -60,7 +69,7 @@ Launching the app provides more flexibility for you to freely input text to encr
 <br/><br/>
 At the app, you are free to encrypt and decrypt text, swap the input and results.<br/>
 You may also select the encryption security, from 1 the lowest, to 9 the highest. Default is 5.<br/><br/>
-<img width="600" alt="image" src="https://user-images.githubusercontent.com/11599040/226794918-2f3c6f32-cb5c-435d-966a-3cdc06068f20.png">
+<img width="738" alt="Screenshot 2024-04-19 at 12 47 08" src="https://github.com/philipckwan/pck_encrypt_decrypt/assets/11599040/b49f9a31-47be-4ce0-bf1f-08de52ea7de9">
 <br/><br/>
 
 
