@@ -5,7 +5,6 @@ TODO:
  this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
 -feature: filename encrypt
 -feature: header encrypt, i.e. encrypt the first 100 bytes
-DONE(v1.12)-feature: add mode "decc" to decrypt from file and copy to clipboard, provided only 1 tag is matched
 -all enci mode to have an optional tag, so that the encrypted text is already enclosed in tag
 -in dec mode with tag, if the password is wrong, it outputs the orginal line with the decrypted content empty, it should output an error instead
 -enhance to handle multiple lines of encryption tags, instead of just 1 line
@@ -15,7 +14,7 @@ CANNOT FIX-BUG for linux version, seems using deci (interactive mode) there is a
  -furthermore, need to consider a one line mode to enter both text and password for automation?
 -able to pipe text to the script
 -BUG; there is an extra space when decrypting (using chrome extension app) an encryption (from linux shell script, enci mode)
-DONE(v1.14)-feature: add mode "encic" to encrypt text from interactive mode, and copy to clipboard
+FIXED(v1.15)-add "-n" option to "echo" command when piping it to pbcopy (i.e. clipboard), so that it won't have an extra newline character to the decrypted string
 
 some commands that are useful:
 
@@ -28,6 +27,8 @@ diff (cat <file1>) (cat <file2>)
 ----------------------------------------------------
 DONE:
 
+DONE(v1.14)-feature: add mode "encic" to encrypt text from interactive mode, and copy to clipboard
+DONE(v1.12)-feature: add mode "decc" to decrypt from file and copy to clipboard, provided only 1 tag is matched
 DONE(v1.11)-feature: enhance the password to leverage the duplicated characters to further shuffle the original text
  DONE(v1.11)-ensure can encrypt/decrypt non ascii plain text (i.e. Chinese, symbols like $*@#)
 DONE(v1.11)-For encryption, it shouldn't be "Please type or paste the encrypted text", should be "Please type or paste the text to be encrypted"

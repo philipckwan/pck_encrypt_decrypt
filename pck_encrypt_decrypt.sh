@@ -81,7 +81,7 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.14.1"
+	echo "pck_encrypt_decrypt.sh v1.15.1"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -472,7 +472,7 @@ function do_work_on_stdin {
 		echo "password_reversed:  [$password_reversed]"
 	fi
 	if [ "${is_copy_to_clipboard}" = true ] ; then
-		echo "$output_one_line" | ${PBCOPY}
+		echo -n "$output_one_line" | ${PBCOPY}
 		echo ""
 		if [ "${is_encrypt}" = false ] ; then
 			echo "The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
@@ -588,7 +588,7 @@ function do_work_on_a_file {
 							if [ ! -z "${error_one_line}" ] ; then
 								echo "${error_one_line}"
 							elif [ "${is_copy_to_clipboard}" = true ] ; then
-								echo "$output_one_line" | ${PBCOPY}
+								echo -n "$output_one_line" | ${PBCOPY}
 								echo "DECRYPTED: The decrypted text is already copied to clipboard; length of text:${#output_one_line};"
 								echo "Warning: only the first matched tag will be decrypted and copied to clipboard"
 								echo "-----RESULTS END-----"

@@ -1,5 +1,8 @@
 For pck_encrypt_decrypt.sh (Linux bash script):
 
+-v1.15 (20240911)
+1) add "-n" option to "echo" command when piping it to pbcopy (i.e. clipboard), so that it won't have an extra newline character to the decrypted string
+
 -v1.14 (20240403)
 1) Add mode "encic" to encrypt text from interactive mode, and copy to clipboard
 
