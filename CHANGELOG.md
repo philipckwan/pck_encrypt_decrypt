@@ -1,5 +1,8 @@
 For pck_encrypt_decrypt.sh (Linux bash script):
 
+-v1.16 (20250101)
+1) fix BUG - the command "read" is not found in ubuntu; resolution is to use "type" instead of "which" to check the availability of the commands
+
 -v1.15 (20240911)
 1) add "-n" option to "echo" command when piping it to pbcopy (i.e. clipboard), so that it won't have an extra newline character to the decrypted string
 

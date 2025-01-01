@@ -81,7 +81,7 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.15.1"
+	echo "pck_encrypt_decrypt.sh v1.16.1"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -103,7 +103,7 @@ function print_usage_and_exit {
 }
 
 function command_check {
-	which $1 > /dev/null 2>&1
+	type $1 > /dev/null 2>&1
 	if [ 1 -eq $? ]
 	then
 		echo "command_check: ERROR - command [$1] not found"
@@ -112,7 +112,7 @@ function command_check {
 }
 
 function commands_check_post_arguments {
-	which "${PBCOPY}" > /dev/null 2>&1
+	type "${PBCOPY}" > /dev/null 2>&1
 	if [ 1 -eq $? ] && [ "${is_copy_to_clipboard}" = true ]
 	then
 		echo "commands_check_post_arguments: ERROR - command [$PBCOPY] not found and the chosen mode requires copy to clipboard"
