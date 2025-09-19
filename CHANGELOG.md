@@ -1,5 +1,10 @@
 For pck_encrypt_decrypt.sh (Linux bash script):
 
+-v1.17 (20250919)
+1) Add an option "decfr" to decrypt a file and put it on ramdisk (currently only tested and supported on MacOS)
+This feature aims to decrypt a file without writing it to persistent storage (i.e. harddisk)
+One might need to unmount and eject the ramdisk after using it.
+
 -v1.16 (20250101)
 1) fix BUG - the command "read" is not found in ubuntu; resolution is to use "type" instead of "which" to check the availability of the commands
 

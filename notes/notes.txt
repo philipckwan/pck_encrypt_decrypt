@@ -1,20 +1,12 @@
 TODO:
 
-FIXED(v1.16)-BUG; the command "read" is not found in ubuntu
+DONE(v1.17)-support to decrypt file to a ramdisk (i.e. in memory), first focus on mac version
 -consider to put in proper encryption such as gpg or openssl
-MOVED (to github Issues)-in linux version (pck_encrypt_decrypt.sh), encryption (mode 'encf') seems to always append a line to the end; for windows version, it doesn't append a line to the end
- this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
-MOVED (to github Issues)-feature: filename encrypt
-MOVED (to github Issues)-feature: header encrypt, i.e. encrypt the first 100 bytes
 -all enci mode to have an optional tag, so that the encrypted text is already enclosed in tag
-MOVED (to github Issues)-in dec mode with tag, if the password is wrong, it outputs the orginal line with the decrypted content empty, it should output an error instead
 -enhance to handle multiple lines of encryption tags, instead of just 1 line
-MOVED (to github Issues)-BUG for win version, chinese characters seem cannot be encrypted/decrypted with tags 
-MOVED (to github Issues); CANNOT FIX-BUG for linux version, seems using deci (interactive mode) there is a maximum limit on the input encrypted string, rest will be capped if over and the results is wrong
 -add a mode for providing the text to encrypt/decrypt at argument
  -furthermore, need to consider a one line mode to enter both text and password for automation?
 -able to pipe text to the script
-MOVED (to github Issues)-BUG; there is an extra space when decrypting (using chrome extension app) an encryption (from linux shell script, enci mode)
 
 some commands that are useful:
 
@@ -27,6 +19,15 @@ diff (cat <file1>) (cat <file2>)
 ----------------------------------------------------
 DONE:
 
+MOVED (to github Issues)-BUG; there is an extra space when decrypting (using chrome extension app) an encryption (from linux shell script, enci mode)
+MOVED (to github Issues)-BUG for win version, chinese characters seem cannot be encrypted/decrypted with tags 
+MOVED (to github Issues); CANNOT FIX-BUG for linux version, seems using deci (interactive mode) there is a maximum limit on the input encrypted string, rest will be capped if over and the results is wrong
+MOVED (to github Issues)-in dec mode with tag, if the password is wrong, it outputs the orginal line with the decrypted content empty, it should output an error instead
+MOVED (to github Issues)-feature: filename encrypt
+MOVED (to github Issues)-feature: header encrypt, i.e. encrypt the first 100 bytes
+MOVED (to github Issues)-in linux version (pck_encrypt_decrypt.sh), encryption (mode 'encf') seems to always append a line to the end; for windows version, it doesn't append a line to the end
+ this caused the resulting file different in the encrypted version, although when decrypting, they seems to become identical file again.
+FIXED(v1.16)-BUG; the command "read" is not found in ubuntu
 FIXED(v1.15)-add "-n" option to "echo" command when piping it to pbcopy (i.e. clipboard), so that it won't have an extra newline character to the decrypted string
 DONE(v1.14)-feature: add mode "encic" to encrypt text from interactive mode, and copy to clipboard
 DONE(v1.12)-feature: add mode "decc" to decrypt from file and copy to clipboard, provided only 1 tag is matched

@@ -151,6 +151,12 @@ For mode "decf" decryption of a whole file, in the general case it will append t
 But for this mode, instead it will strip the last file extension of the original encrypted file.<br/>
 This is useful for it reverse the operation that when one uses the mode "encf" to encrypt the file, it appends the ".encf" extension.<br/>
 Using this mode to decrypt will get you back to the filename when you originally encrypted it.<br/>
+* decrypt a file and put it onto ramdisk<br/>
+```decfr```<br/>
+This mode will put the decrypted file onto a newly created ramdisk<br/>
+My idea of using this mode is to prevent the decrypted file to be written to the file system.<br/>
+After using the decrypted file, the user should unmount and eject the ramdisk<br/>
+This mode also assumes the "decfs" option and will strip the ".encf" extension<br/>
 
 Interactive based
 -

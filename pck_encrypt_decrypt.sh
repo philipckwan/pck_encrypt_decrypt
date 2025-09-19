@@ -12,6 +12,8 @@ TR=tr
 REV=rev
 READ=read
 PBCOPY=pbcopy
+HDIUTIL=hdiutil
+DISKUTIL=diskutil
 
 ARG_KEY_ENCRYPT_IN_MEMORY="enc"
 ARG_KEY_DECRYPT_IN_MEMORY="dec"
@@ -19,6 +21,7 @@ ARG_KEY_DECRYPT_IN_MEMORY_COPY_TO_CLIPBOARD="decc"
 ARG_KEY_ENCRYPT_IN_FILE="encf"
 ARG_KEY_DECRYPT_IN_FILE="decf"
 ARG_KEY_DECRYPT_IN_FILE_STRIP_EXTENSION="decfs"
+ARG_KEY_DECRYPT_IN_FILE_TO_RAMDISK="decfr"
 ARG_KEY_ENCRYPT_FROM_STDIN="enci"
 ARG_KEY_DECRYPT_FROM_STDIN="deci"
 ARG_KEY_DECRYPT_FROM_STDIN_SHOW_B64_CHARSET="decis"
@@ -29,6 +32,11 @@ arg_filepath=""
 arg_base64_option=""
 arg_encrypt_decrypt_rounds="not set"
 arg_tag_key=""
+arg_ramdisk_path=""
+
+RAMDISK_PATH_PREFIX="/Volumes/"
+RAMDISK_SIZE=524288
+RAMDISK_DEFAULT_NAME="pckRAMDisk"
 
 MODE_FILE="FILE"
 MODE_TAG="TAG"
@@ -39,6 +47,7 @@ filename=""
 filepath=""
 tag_key_head=""
 tag_key_tail=""
+ramdisk_path_full=""
 
 password_from_stdin=""
 password_processed=""
@@ -51,6 +60,8 @@ is_show_b64_charset=false
 is_copy_to_clipboard=false
 tag_keys=()
 encrypted_from_stdin=""
+is_decrypt_to_ramdisk=false
+original_file_permissions=""
 
 # used by do_work_one_line, decrypt_one_line, encrypt_one_line
 input_one_line=""
@@ -81,7 +92,7 @@ text_shuffle_charset="0123456789 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 
 function print_usage_and_exit {
 	echo ""
-	echo "pck_encrypt_decrypt.sh v1.16.1"
+	echo "pck_encrypt_decrypt.sh v1.17.2"
 	echo ""
 	echo "Usage 1: pck_encrypt_decrypt.sh <filepath> <encrypt option> [<tag key>]"
 	echo "-filepath: relative path and filename"
@@ -99,6 +110,12 @@ function print_usage_and_exit {
 	echo "e.g."
 	echo "$ pck_encrypt_decrypt.sh enci5"
 	echo "The above will run the encryption with 5 rounds"
+	echo ""
+	echo "Usage 3: pck_encrypt_decrypt.sh <filepath> decfr <mount path>"
+	echo "-decrypt and output the resulting file to a ramdisk, which is in memory but can be accessible as a local file system"
+	echo "This assumes the whole file is to be decrypted and the extension is to be stripped"
+	echo "-given a <mount path> as 'RamDisk', the resulting file will be mounted to '/Volumes/RamDisk'"
+	echo ""
 	exit 1
 }
 
@@ -117,6 +134,11 @@ function commands_check_post_arguments {
 	then
 		echo "commands_check_post_arguments: ERROR - command [$PBCOPY] not found and the chosen mode requires copy to clipboard"
 		print_usage_and_exit
+	fi
+	if [ "${is_decrypt_to_ramdisk}" = true ]
+	then
+		command_check "${HDIUTIL}"
+		command_check "${DISKUTIL}"
 	fi
 } 
 
@@ -211,6 +233,17 @@ function arguments_check {
 			is_generate_results_in_file=true
 			is_encrypt=false
 			is_strip_extension=true
+		elif [ "$ARG_KEY_DECRYPT_IN_FILE_TO_RAMDISK" == "$arg_base64_option" ]
+		then
+			is_generate_results_in_file=true
+			is_encrypt=false
+			is_strip_extension=true
+			is_decrypt_to_ramdisk=true
+			arg_ramdisk_path=$3
+			if [ -z "$arg_ramdisk_path" ] ; then
+				arg_ramdisk_path=${RAMDISK_DEFAULT_NAME}
+			fi
+			ramdisk_path_full="${RAMDISK_PATH_PREFIX}${arg_ramdisk_path}"
 		else
 			echo "arguments_check: ERROR - arg_base64_option is not specified correctly"
 			print_usage_and_exit
@@ -229,7 +262,7 @@ function arguments_check {
 			print_usage_and_exit
 		fi
 
-		if  [ -z "$arg_tag_key" ]
+		if  [ -z "$arg_tag_key" ] || [ "${is_decrypt_to_ramdisk}" == true ]
 		then
 			mode=$MODE_FILE			
 		else 
@@ -242,6 +275,10 @@ function arguments_check {
 		echo "arguments_check: mode: [$mode]"
 		echo "arguments_check: filepath: [$filepath]"
 		echo "arguments_check: filename: [$filename]"
+		echo "arguments_check: is_decrypt_to_ramdisk: [$is_decrypt_to_ramdisk]"
+		if [ "${is_decrypt_to_ramdisk}" == true ] ; then
+			echo "arguments_check: ramdisk_path_full: [$ramdisk_path_full]"
+		fi
 		if [ "${is_encrypt}" == true ] ; then
 			echo "arguments_check: encrypt_decrypt_rounds: [$encrypt_decrypt_rounds]"
 		fi
@@ -507,10 +544,30 @@ function do_work_on_a_file {
 	f_tmp1="${f}.1.tmp"
 	f_tmp2="${f}.2.tmp"
 	f_tmpPH=""
+
 	if [ "${is_strip_extension}" = true ] ; then
 		g="${f%.*}"
 	else
 		g="${f}.${arg_base64_option}"
+	fi
+	if [ "${is_decrypt_to_ramdisk}" = true ] ; then
+		original_file_permissions=$(stat -f "%A" $f)
+		echo "do_work_on_a_file: original_file_permissions: [$original_file_permissions]"
+		g="${ramdisk_path_full}/${f%.*}"
+		if [ -e "${ramdisk_path_full}" ] ; then
+			echo "do_work_on_a_file: ${ramdisk_path_full} already exists;"
+			if [ -d "${ramdisk_path_full}" ] ; then
+				echo "do_work_on_a_file: ${ramdisk_path_full} is a directory, assuming it is a ramdisk, will continue the process;"
+			else
+				echo "do_work_on_a_file: ${ramdisk_path_full} is not a directory, will stop the process"
+				exit 1
+			fi
+		else
+			echo "do_work_on_a_file: ${ramdisk_path_full} does not exist, will create the ramdisk"
+			ram_disk_device=$(${HDIUTIL} attach -nomount ram://${RAMDISK_SIZE})
+			${DISKUTIL} erasevolume HFS+ "${arg_ramdisk_path}" ${ram_disk_device}
+			echo "do_work_on_a_file: ramdisk mounted at ${ramdisk_path_full}"
+		fi
 	fi
 	matched_text=""
 	results=""
@@ -552,6 +609,10 @@ function do_work_on_a_file {
 				f_tmp2=$f_tmpPH
 			done
 			cat $f_tmp1 > $g
+			if [ "${is_decrypt_to_ramdisk}" = true ] ; then
+				chmod ${original_file_permissions} $g
+				echo "do_work_on_a_file: ${g} is created with permissions: ${original_file_permissions}"
+			fi
 		fi	
 		rm -rf $f_tmp1 
 		rm -rf $f_tmp2
